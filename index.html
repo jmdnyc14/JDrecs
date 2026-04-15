@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Media Agent</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 620px;
+      margin: 48px auto;
+      padding: 0 24px;
+      color: #1a1a1a;
+      background: #f9f9f7;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #444;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      font-family: sans-serif;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      box-sizing: border-box;
+      resize: vertical;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #999;
+    }
+
+    .key-row {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0;
+      align-items: center;
+    }
+
+    .key-row input {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: monospace;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+    }
+
+    .key-row input:focus {
+      outline: none;
+      border-color: #999;
+    }
+
+    .key-note {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    .key-note a {
+      color: #555;
+    }
+
+    button {
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      padding: 11px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #888;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    #results {
+      margin-top: 24px;
+    }
+
+    .result-card {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+    }
+
+    .result-number {
+      font-size: 11px;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .result-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+
+    .result-reason {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .error {
+      background: #fff3f3;
+      border: 1px solid #fcc;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #c00;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>What should I watch next?</h1>
+  <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
+
+  <label for="history">Your recent watches, reads, or listens</label>
+  <textarea id="history" rows="6"
+    placeholder="e.g.
+- Watched Inception and loved it
+- Read Dune, really enjoyed the world-building
+- Listened to a lot of Radiohead lately
+- Watched The Bear on Hulu, loved the pacing"></textarea>
+
+  <div class="key-row">
+    <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
+  </div>
+  <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. It stays in your browser only.</p>
+
+  <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
+
+  <p id="status"></p>
+  <div id="results"></div>
+
+  <script>
+    async function getRecommendations() {
+      const history = document.getElementById("history").value.trim();
+      const apiKey = document.getElementById("api-key").value.trim();
+      const btn = document.getElementById("go-btn");
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+
+      if (!history) {
+        status.textContent = "Please describe some things you've watched, read, or listened to.";
+        return;
+      }
+
+      if (!apiKey || !apiKey.startsWith("sk-")) {
+        status.textContent = "Please paste your API key above (starts with sk-ant-...).";
+        return;
+      }
+
+      btn.disabled = true;
+      status.textContent = "Thinking...";
+      results.innerHTML = "";
+
+      const prompt = `You are a personalized media recommendation agent.
+
+The user has shared their recent viewing, reading, and listening history:
+
+${history}
+
+Based on this, recommend exactly 5 things they haven't seen/read/heard yet.
+Mix media types if it fits (movies, shows, books, albums, podcasts).
+
+Return ONLY a JSON array with exactly 5 objects. No extra text, no markdown, just raw JSON.
+Each object must have:
+- "title": the name of the work
+- "type": one of "Movie", "TV Show", "Book", "Album", or "Podcast"
+- "reason": one sentence explaining why they'd love it based on their history
+
+Example format:
+[{"title":"...","type":"Movie","reason":"..."},...]`;
+
+      try {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1000,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error?.message || "API error " + response.status);
+        }
+
+        const data = await response.json();
+        const text = data.content[0].text.trim();
+
+        let recs;
+        try {
+          const clean = text.replace(/```json|```/g, "").trim();
+          recs = JSON.parse(clean);
+        } catch {
+          throw new Error("Couldn't parse the response. Try again.");
+        }
+
+        status.textContent = "";
+        results.innerHTML = recs.map((r, i) => `
+          <div class="result-card">
+            <div class="result-number">#${i + 1} &mdash; ${r.type}</div>
+            <div class="result-title">${r.title}</div>
+            <div class="result-reason">${r.reason}</div>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        status.textContent = "";
+        results.innerHTML = `<div class="error">Something went wrong: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+
+</body>
+</html>
