@@ -169,7 +169,8 @@
 - Watched Inception and loved it
 - Read Dune, really enjoyed the world-building
 - Listened to a lot of Radiohead lately
-- Watched The Bear on Hulu, loved the pacing"></textarea>
+- Watched The Bear on Hulu, loved the pacing
+- Played The Last of Us, loved the story"></textarea>
 
   <div class="key-row">
     <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
@@ -210,12 +211,12 @@ The user has shared their recent viewing, reading, and listening history:
 ${history}
 
 Based on this, recommend exactly 5 things they haven't seen/read/heard yet.
-Mix media types if it fits (movies, shows, books, albums, podcasts).
+Mix media types if it fits (movies, shows, books, albums, podcasts, video games).
 
 Return ONLY a JSON array with exactly 5 objects. No extra text, no markdown, just raw JSON.
 Each object must have:
 - "title": the name of the work
-- "type": one of "Movie", "TV Show", "Book", "Album", or "Podcast"
+- "type": one of "Movie", "TV Show", "Book", "Album", "Podcast", or "Video Game"
 - "reason": one sentence explaining why they'd love it based on their history
 
 Example format:
