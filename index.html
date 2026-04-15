@@ -156,6 +156,26 @@
       font-size: 13px;
       color: #c00;
     }
+
+    .rating-row {
+      margin: 12px 0;
+    }
+
+    .rating-row select {
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: sans-serif;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .rating-row select:focus {
+      outline: none;
+      border-color: #999;
+    }
   </style>
 </head>
 <body>
@@ -169,7 +189,24 @@
 - Watched Inception and loved it
 - Read Dune, really enjoyed the world-building
 - Listened to a lot of Radiohead lately
-- Watched The Bear on Hulu, loved the pacing"></textarea>
+- Watched The Bear on Hulu, loved the pacing
+- Played The Last of Us, loved the story"></textarea>
+
+  <div class="rating-row">
+    <label for="rating">How much did you enjoy these overall?</label>
+    <select id="rating">
+      <option value="1">1 — Didn't really enjoy it</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5" selected>5 — It was okay</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10 — Absolutely loved it</option>
+    </select>
+  </div>
 
   <div class="key-row">
     <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
@@ -184,6 +221,7 @@
   <script>
     async function getRecommendations() {
       const history = document.getElementById("history").value.trim();
+      const rating = document.getElementById("rating").value;
       const apiKey = document.getElementById("api-key").value.trim();
       const btn = document.getElementById("go-btn");
       const status = document.getElementById("status");
@@ -209,13 +247,15 @@ The user has shared their recent viewing, reading, and listening history:
 
 ${history}
 
+The user rated their overall enjoyment of this content: ${rating}/10.
+
 Based on this, recommend exactly 5 things they haven't seen/read/heard yet.
-Mix media types if it fits (movies, shows, books, albums, podcasts).
+Mix media types if it fits (movies, shows, books, albums, podcasts, video games).
 
 Return ONLY a JSON array with exactly 5 objects. No extra text, no markdown, just raw JSON.
 Each object must have:
 - "title": the name of the work
-- "type": one of "Movie", "TV Show", "Book", "Album", or "Podcast"
+- "type": one of "Movie", "TV Show", "Book", "Album", "Podcast", or "Video Game"
 - "reason": one sentence explaining why they'd love it based on their history
 
 Example format:
