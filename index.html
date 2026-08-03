@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Media Agent</title>
+  <title>jdlogs</title>
   <style>
     body {
       font-family: sans-serif;
@@ -177,6 +177,26 @@
       border-color: #999;
     }
 
+    .date-row {
+      margin: 12px 0;
+    }
+
+    .date-row input[type="date"] {
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: sans-serif;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .date-row input[type="date"]:focus {
+      outline: none;
+      border-color: #999;
+    }
+
     /* ── Log section ── */
     .log-section {
       margin-top: 48px;
@@ -247,17 +267,91 @@
     .log-entry-meta {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 10px;
+      gap: 8px;
     }
 
-    .log-entry-date {
+    .log-entry-dates {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-entry-logged {
       font-size: 11px;
-      font-weight: 600;
-      color: #aaa;
+      color: #bbb;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
+
+    .log-entry-record {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-edit-date {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      text-decoration: underline;
+      font-weight: 400;
+    }
+
+    .btn-edit-date:hover {
+      color: #555;
+      background: none;
+    }
+
+    .record-date-edit {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .record-date-edit input[type="date"] {
+      padding: 3px 7px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #1a1a1a;
+    }
+
+    .record-date-edit input[type="date"]:focus {
+      outline: none;
+      border-color: #999;
+    }
+
+    .btn-save-date, .btn-cancel-date {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 11px;
+      padding: 3px 8px;
+      cursor: pointer;
+      width: auto;
+      color: #444;
+      font-weight: 500;
+    }
+
+    .btn-save-date {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
+    }
+
+    .btn-save-date:hover { background: #333; }
+    .btn-cancel-date:hover { background: #f0f0ee; }
 
     .log-entry-rating {
       font-size: 12px;
@@ -266,6 +360,7 @@
       background: #f0f0ee;
       border-radius: 5px;
       padding: 2px 8px;
+      white-space: nowrap;
     }
 
     .log-history {
@@ -314,7 +409,7 @@
 </head>
 <body>
 
-  <h1>What should I watch next?</h1>
+  <h1>jdlogs</h1>
   <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
 
   <label for="history">Your recent watches, reads, or listens</label>
@@ -325,6 +420,11 @@
 - Listened to a lot of Radiohead lately
 - Watched The Bear on Hulu, loved the pacing
 - Played The Last of Us, loved the story"></textarea>
+
+  <div class="date-row">
+    <label for="record-date">Date of record</label>
+    <input type="date" id="record-date" />
+  </div>
 
   <div class="rating-row">
     <label for="rating">How much did you enjoy these overall?</label>
@@ -366,16 +466,46 @@
   <script>
     const LOG_KEY = "jdrecs_log";
 
+    const TYPE_PLURALS = {
+      "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
+      "Album": "Albums", "Podcast": "Podcasts", "Video Game": "Video Games"
+    };
+    const TYPE_ORDER = ["Movie", "TV Show", "Book", "Album", "Podcast", "Video Game"];
+
+    // Set date input to today on load
+    document.getElementById("record-date").value = new Date().toISOString().slice(0, 10);
+
     function loadLog() {
       try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
       catch { return []; }
     }
 
-    function saveToLog(history, rating, recs) {
+    function saveToLog(history, recordDate, rating, recs) {
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), rating, history, recommendations: recs });
+      entries.unshift({
+        date: new Date().toISOString(),
+        recordDate,
+        rating,
+        history,
+        recommendations: recs
+      });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
+    }
+
+    function updateEntryRecordDate(index, newDate) {
+      const entries = loadLog();
+      if (entries[index]) {
+        entries[index].recordDate = newDate;
+        localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      }
+      renderLog();
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
     }
 
     function renderLog() {
@@ -387,10 +517,13 @@
         return;
       }
 
-      container.innerHTML = entries.map(entry => {
-        const date = new Date(entry.date).toLocaleDateString("en-US", {
+      container.innerHTML = entries.map((entry, index) => {
+        const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
           year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
         });
+        const recordDisplay = entry.recordDate
+          ? formatDate(entry.recordDate + "T12:00:00")
+          : "Not set";
 
         const grouped = {};
         for (const r of entry.recommendations) {
@@ -398,14 +531,13 @@
           grouped[r.type].push(r);
         }
 
-        const typeOrder = ["Movie", "TV Show", "Book", "Album", "Podcast", "Video Game"];
         const sortedTypes = Object.keys(grouped).sort(
-          (a, b) => typeOrder.indexOf(a) - typeOrder.indexOf(b)
+          (a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b)
         );
 
         const groupsHTML = sortedTypes.map(type => `
           <div class="log-type-group">
-            <div class="log-type-label">${type}s</div>
+            <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
             ${grouped[type].map(r => `
               <div class="log-item">
                 <span class="log-item-title">${r.title}</span>
@@ -416,9 +548,20 @@
         `).join("");
 
         return `
-          <div class="log-entry">
+          <div class="log-entry" id="entry-${index}">
             <div class="log-entry-meta">
-              <span class="log-entry-date">${date}</span>
+              <div class="log-entry-dates">
+                <span class="log-entry-logged">Logged: ${loggedDate}</span>
+                <span class="log-entry-record" id="record-display-${index}">
+                  Record date: ${recordDisplay}
+                  <button class="btn-edit-date" onclick="startEditDate(${index}, '${entry.recordDate || ''}')">Edit</button>
+                </span>
+                <span class="record-date-edit" id="record-edit-${index}" style="display:none;">
+                  <input type="date" id="record-input-${index}" value="${entry.recordDate || new Date().toISOString().slice(0,10)}" />
+                  <button class="btn-save-date" onclick="saveEditDate(${index})">Save</button>
+                  <button class="btn-cancel-date" onclick="cancelEditDate(${index})">Cancel</button>
+                </span>
+              </div>
               <span class="log-entry-rating">Enjoyed: ${entry.rating}/10</span>
             </div>
             <div class="log-history">${entry.history}</div>
@@ -428,15 +571,33 @@
       }).join("");
     }
 
+    function startEditDate(index, currentDate) {
+      document.getElementById(`record-display-${index}`).style.display = "none";
+      const editRow = document.getElementById(`record-edit-${index}`);
+      editRow.style.display = "flex";
+      if (currentDate) document.getElementById(`record-input-${index}`).value = currentDate;
+    }
+
+    function saveEditDate(index) {
+      const val = document.getElementById(`record-input-${index}`).value;
+      updateEntryRecordDate(index, val);
+    }
+
+    function cancelEditDate(index) {
+      document.getElementById(`record-display-${index}`).style.display = "flex";
+      document.getElementById(`record-edit-${index}`).style.display = "none";
+    }
+
     function exportCSV() {
       const entries = loadLog();
       if (entries.length === 0) { alert("No log entries to export."); return; }
 
-      const rows = [["Date", "Rating", "Type", "Title", "Reason", "History"]];
+      const rows = [["Logged Date", "Record Date", "Rating", "Type", "Title", "Reason", "History"]];
       for (const entry of entries) {
-        const date = new Date(entry.date).toLocaleString();
+        const logged = new Date(entry.date).toLocaleString();
+        const record = entry.recordDate || "";
         for (const r of entry.recommendations) {
-          rows.push([date, entry.rating, r.type, r.title, r.reason, entry.history.replace(/\n/g, " ")]);
+          rows.push([logged, record, entry.rating, r.type, r.title, r.reason, entry.history.replace(/\n/g, " ")]);
         }
       }
 
@@ -444,7 +605,7 @@
       const blob = new Blob([csv], { type: "text/csv" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "jdrecs-log.csv";
+      a.download = "jdlogs.csv";
       a.click();
     }
 
@@ -456,6 +617,7 @@
 
     async function getRecommendations() {
       const history = document.getElementById("history").value.trim();
+      const recordDate = document.getElementById("record-date").value;
       const rating = document.getElementById("rating").value;
       const apiKey = document.getElementById("api-key").value.trim();
       const btn = document.getElementById("go-btn");
@@ -537,7 +699,7 @@ Example format:
           </div>
         `).join("");
 
-        saveToLog(history, rating, recs);
+        saveToLog(history, recordDate, rating, recs);
 
       } catch (err) {
         status.textContent = "";
