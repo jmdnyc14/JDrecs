@@ -46,10 +46,7 @@
       color: #1a1a1a;
     }
 
-    textarea:focus {
-      outline: none;
-      border-color: #999;
-    }
+    textarea:focus { outline: none; border-color: #999; }
 
     .key-row {
       display: flex;
@@ -69,20 +66,10 @@
       color: #1a1a1a;
     }
 
-    .key-row input:focus {
-      outline: none;
-      border-color: #999;
-    }
+    .key-row input:focus { outline: none; border-color: #999; }
 
-    .key-note {
-      font-size: 12px;
-      color: #888;
-      margin-bottom: 16px;
-    }
-
-    .key-note a {
-      color: #555;
-    }
+    .key-note { font-size: 12px; color: #888; margin-bottom: 16px; }
+    .key-note a { color: #555; }
 
     button {
       background: #1a1a1a;
@@ -97,14 +84,8 @@
       transition: background 0.15s;
     }
 
-    button:hover {
-      background: #333;
-    }
-
-    button:disabled {
-      background: #aaa;
-      cursor: not-allowed;
-    }
+    button:hover { background: #333; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
 
     #status {
       margin-top: 12px;
@@ -114,9 +95,7 @@
       text-align: center;
     }
 
-    #results {
-      margin-top: 24px;
-    }
+    #results { margin-top: 24px; }
 
     .result-card {
       background: #fff;
@@ -135,18 +114,8 @@
       margin-bottom: 4px;
     }
 
-    .result-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 4px;
-    }
-
-    .result-reason {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.6;
-    }
+    .result-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .result-reason { font-size: 13px; color: #555; line-height: 1.6; }
 
     .error {
       background: #fff3f3;
@@ -157,44 +126,41 @@
       color: #c00;
     }
 
-    .rating-row {
+    .form-row {
+      display: flex;
+      gap: 16px;
       margin: 12px 0;
+      flex-wrap: wrap;
+      align-items: flex-end;
     }
 
-    .rating-row select {
+    .form-row > div { display: flex; flex-direction: column; gap: 5px; }
+
+    .form-row select,
+    .form-row input[type="date"] {
       padding: 10px 12px;
       font-size: 14px;
       font-family: sans-serif;
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fff;
-      color: #1a1a1a;
+      color: #000;
       cursor: pointer;
     }
 
-    .rating-row select:focus {
-      outline: none;
-      border-color: #999;
-    }
+    .form-row select:focus,
+    .form-row input[type="date"]:focus { outline: none; border-color: #999; }
 
-    .date-row {
-      margin: 12px 0;
-    }
-
-    .date-row input[type="date"] {
-      padding: 10px 12px;
-      font-size: 14px;
-      font-family: sans-serif;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: #fff;
-      color: #1a1a1a;
-      cursor: pointer;
-    }
-
-    .date-row input[type="date"]:focus {
-      outline: none;
-      border-color: #999;
+    /* ── Media type tags ── */
+    .type-tag {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
     }
 
     /* ── Log section ── */
@@ -209,18 +175,12 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 16px;
-    }
-
-    .log-header h2 {
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .log-actions {
-      display: flex;
       gap: 8px;
     }
+
+    .log-header h2 { font-size: 16px; font-weight: 600; margin: 0; }
+
+    .log-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .log-actions button {
       width: auto;
@@ -229,54 +189,24 @@
       border-radius: 6px;
     }
 
-    .log-actions .btn-export {
-      background: #fff;
-      color: #1a1a1a;
-      border: 1px solid #ddd;
-    }
+    .btn-add    { background: #1a1a1a; color: #fff; border: 1px solid #1a1a1a; }
+    .btn-add:hover { background: #333; }
+    .btn-collapse-all { background: #fff; color: #444; border: 1px solid #ddd; }
+    .btn-collapse-all:hover { background: #f0f0ee; }
+    .btn-export { background: #fff; color: #1a1a1a; border: 1px solid #ddd; }
+    .btn-export:hover { background: #f0f0ee; }
+    .btn-clear  { background: #fff; color: #c00; border: 1px solid #fcc; }
+    .btn-clear:hover { background: #fff3f3; }
 
-    .log-actions .btn-export:hover {
-      background: #f0f0ee;
-    }
+    .log-empty { font-size: 13px; color: #aaa; text-align: center; padding: 24px 0; }
 
-    .log-actions .btn-add {
-      background: #1a1a1a;
-      color: #fff;
-      border: 1px solid #1a1a1a;
-    }
-
-    .log-actions .btn-add:hover {
-      background: #333;
-    }
-
-    .log-actions .btn-clear {
-      background: #fff;
-      color: #c00;
-      border: 1px solid #fcc;
-    }
-
-    .log-actions .btn-clear:hover {
-      background: #fff3f3;
-    }
-
+    /* Manual entry form */
     .manual-form {
       background: #fff;
       border: 1px solid #e8e8e4;
       border-radius: 10px;
       padding: 16px 18px;
       margin-bottom: 16px;
-    }
-
-    .manual-form label {
-      margin-top: 10px;
-    }
-
-    .manual-form label:first-child {
-      margin-top: 0;
-    }
-
-    .manual-form textarea {
-      margin-bottom: 0;
     }
 
     .manual-form-row {
@@ -287,83 +217,34 @@
       flex-wrap: wrap;
     }
 
-    .manual-form-row > div {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
+    .manual-form-row > div { display: flex; flex-direction: column; gap: 5px; }
 
-    .manual-form-row input[type="date"],
-    .manual-form-row select {
+    .manual-form-row select,
+    .manual-form-row input[type="date"] {
       padding: 8px 10px;
       font-size: 13px;
       font-family: sans-serif;
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fff;
-      color: #1a1a1a;
+      color: #000;
       cursor: pointer;
     }
 
-    .manual-form-row input[type="date"]:focus,
-    .manual-form-row select:focus {
-      outline: none;
-      border-color: #999;
-    }
+    .manual-form-row select:focus,
+    .manual-form-row input[type="date"]:focus { outline: none; border-color: #999; }
 
-    .manual-form-btns {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
+    .manual-form-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .manual-form-btns button { width: auto; padding: 9px 18px; font-size: 13px; }
+    .btn-form-cancel { background: #fff; color: #444; border: 1px solid #ddd; }
+    .btn-form-cancel:hover { background: #f0f0ee; }
 
-    .manual-form-btns button {
-      width: auto;
-      padding: 9px 18px;
-      font-size: 13px;
-    }
-
-    .btn-form-cancel {
-      background: #fff;
-      color: #444;
-      border: 1px solid #ddd;
-    }
-
-    .btn-form-cancel:hover {
-      background: #f0f0ee;
-    }
-
-    .btn-remove {
-      background: none;
-      border: none;
-      color: #ccc;
-      font-size: 11px;
-      cursor: pointer;
-      padding: 0;
-      width: auto;
-      text-decoration: underline;
-      font-weight: 400;
-      margin-top: 4px;
-      text-align: right;
-    }
-
-    .btn-remove:hover {
-      color: #c00;
-      background: none;
-    }
-
-    .log-empty {
-      font-size: 13px;
-      color: #aaa;
-      text-align: center;
-      padding: 24px 0;
-    }
-
+    /* Log entries */
     .log-entry {
       background: #fff;
       border: 1px solid #e8e8e4;
       border-radius: 10px;
-      padding: 16px 18px;
+      padding: 14px 16px;
       margin-bottom: 12px;
     }
 
@@ -371,15 +252,31 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 10px;
       gap: 8px;
     }
 
-    .log-entry-dates {
+    .log-entry-left { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+
+    .log-entry-top {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
+
+    .btn-chevron {
+      background: none;
+      border: none;
+      color: #bbb;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .btn-chevron:hover { color: #555; background: none; }
 
     .log-entry-logged {
       font-size: 11px;
@@ -395,66 +292,16 @@
       display: flex;
       align-items: center;
       gap: 6px;
-    }
-
-    .btn-edit-date {
-      background: none;
-      border: none;
-      color: #aaa;
-      font-size: 11px;
-      cursor: pointer;
-      padding: 0;
-      width: auto;
-      text-decoration: underline;
-      font-weight: 400;
-    }
-
-    .btn-edit-date:hover {
-      color: #555;
-      background: none;
-    }
-
-    .record-date-edit {
-      display: flex;
-      align-items: center;
-      gap: 6px;
       flex-wrap: wrap;
     }
 
-    .record-date-edit input[type="date"] {
-      padding: 3px 7px;
-      font-size: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      background: #fff;
-      color: #1a1a1a;
+    .log-entry-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
     }
-
-    .record-date-edit input[type="date"]:focus {
-      outline: none;
-      border-color: #999;
-    }
-
-    .btn-save-date, .btn-cancel-date {
-      background: none;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 11px;
-      padding: 3px 8px;
-      cursor: pointer;
-      width: auto;
-      color: #444;
-      font-weight: 500;
-    }
-
-    .btn-save-date {
-      background: #1a1a1a;
-      color: #fff;
-      border-color: #1a1a1a;
-    }
-
-    .btn-save-date:hover { background: #333; }
-    .btn-cancel-date:hover { background: #f0f0ee; }
 
     .log-entry-rating {
       font-size: 12px;
@@ -466,19 +313,89 @@
       white-space: nowrap;
     }
 
+    /* Inline text buttons (edit, remove, hide) */
+    .btn-inline {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      font-size: 11px;
+      text-decoration: underline;
+      font-weight: 400;
+    }
+
+    .btn-inline.muted  { color: #aaa; }
+    .btn-inline.muted:hover { color: #555; background: none; }
+    .btn-inline.danger { color: #ccc; }
+    .btn-inline.danger:hover { color: #c00; background: none; }
+
+    /* Inline date / type edit row */
+    .inline-edit {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .inline-edit input[type="date"],
+    .inline-edit select {
+      padding: 3px 7px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #000;
+    }
+
+    .inline-edit input[type="date"]:focus,
+    .inline-edit select:focus { outline: none; border-color: #999; }
+
+    .btn-isave, .btn-icancel {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 11px;
+      padding: 3px 8px;
+      cursor: pointer;
+      width: auto;
+      color: #444;
+      font-weight: 500;
+    }
+
+    .btn-isave { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .btn-isave:hover { background: #333; }
+    .btn-icancel:hover { background: #f0f0ee; }
+
+    /* Log entry body */
+    .log-entry-body { margin-top: 12px; }
+
     .log-history {
       font-size: 12px;
       color: #888;
       line-height: 1.5;
       border-left: 2px solid #e8e8e4;
       padding-left: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       white-space: pre-wrap;
     }
 
-    .log-type-group {
-      margin-bottom: 10px;
+    .sugg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
     }
+
+    .sugg-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ccc;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .log-type-group { margin-bottom: 10px; }
 
     .log-type-label {
       font-size: 11px;
@@ -496,18 +413,9 @@
       border-bottom: 1px solid #f3f3f1;
     }
 
-    .log-item:last-child {
-      border-bottom: none;
-    }
-
-    .log-item-title {
-      font-weight: 600;
-    }
-
-    .log-item-reason {
-      color: #777;
-      font-size: 12px;
-    }
+    .log-item:last-child { border-bottom: none; }
+    .log-item-title { font-weight: 600; }
+    .log-item-reason { color: #777; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -524,25 +432,33 @@
 - Watched The Bear on Hulu, loved the pacing
 - Played The Last of Us, loved the story"></textarea>
 
-  <div class="date-row">
-    <label for="record-date">Date of record</label>
-    <input type="date" id="record-date" />
-  </div>
-
-  <div class="rating-row">
-    <label for="rating">How much did you enjoy these overall?</label>
-    <select id="rating">
-      <option value="1">1 — Didn't really enjoy it</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5" selected>5 — It was okay</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-      <option value="9">9</option>
-      <option value="10">10 — Absolutely loved it</option>
-    </select>
+  <div class="form-row">
+    <div>
+      <label for="media-type">Media type</label>
+      <select id="media-type" onchange="updateSelectColor(this)">
+        <option value="">— Select —</option>
+        <option value="Film">Film</option>
+        <option value="Television Series">Television Series</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+        <option value="Album">Album</option>
+        <option value="Book">Book</option>
+      </select>
+    </div>
+    <div>
+      <label for="record-date">Date of record</label>
+      <input type="date" id="record-date" />
+    </div>
+    <div>
+      <label for="rating">Enjoyment</label>
+      <select id="rating">
+        <option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="4">4</option>
+        <option value="5" selected>5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option>
+        <option value="9">9</option><option value="10">10</option>
+      </select>
+    </div>
   </div>
 
   <div class="key-row">
@@ -560,6 +476,7 @@
       <h2>Media Log</h2>
       <div class="log-actions">
         <button class="btn-add" onclick="toggleAddForm()">+ Add</button>
+        <button class="btn-collapse-all" id="collapse-all-btn" onclick="toggleAllEntries()">Collapse all</button>
         <button class="btn-export" onclick="exportCSV()">Export CSV</button>
         <button class="btn-clear" onclick="clearLog()">Clear log</button>
       </div>
@@ -569,6 +486,18 @@
       <label for="manual-history">What did you watch, read, or listen to?</label>
       <textarea id="manual-history" rows="4" placeholder="e.g.&#10;- Watched Parasite&#10;- Read The Road&#10;- Played Hollow Knight"></textarea>
       <div class="manual-form-row">
+        <div>
+          <label for="manual-type">Media type</label>
+          <select id="manual-type" onchange="updateSelectColor(this)">
+            <option value="">— Select —</option>
+            <option value="Film">Film</option>
+            <option value="Television Series">Television Series</option>
+            <option value="Game">Game</option>
+            <option value="Song">Song</option>
+            <option value="Album">Album</option>
+            <option value="Book">Book</option>
+          </select>
+        </div>
         <div>
           <label for="manual-date">Date of record</label>
           <input type="date" id="manual-date" />
@@ -596,124 +525,242 @@
   <script>
     const LOG_KEY = "jdrecs_log";
 
+    const TYPE_COLORS = {
+      "Film":              { bg: "#ffffff", border: "1px solid #ccc" },
+      "Television Series": { bg: "#ff6b6b", border: "none" },
+      "Game":              { bg: "#4fa3f7", border: "none" },
+      "Song":              { bg: "#4ecb71", border: "none" },
+      "Album":             { bg: "#4ecb71", border: "none" },
+      "Book":              { bg: "#ff8c42", border: "none" },
+    };
+
     const TYPE_PLURALS = {
       "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
       "Album": "Albums", "Podcast": "Podcasts", "Video Game": "Video Games"
     };
     const TYPE_ORDER = ["Movie", "TV Show", "Book", "Album", "Podcast", "Video Game"];
 
-    // Set date input to today on load
+    const collapsedEntries = new Set();
+    const hiddenSuggestions = new Set();
+
+    // Set defaults on load
     document.getElementById("record-date").value = new Date().toISOString().slice(0, 10);
+
+    function updateSelectColor(el) {
+      const cfg = TYPE_COLORS[el.value];
+      if (cfg) {
+        el.style.background = cfg.bg;
+        el.style.border = cfg.border === "none" ? "1px solid transparent" : cfg.border;
+        el.style.color = "#000";
+      } else {
+        el.style.background = "#fff";
+        el.style.border = "1px solid #ddd";
+        el.style.color = "#1a1a1a";
+      }
+    }
+
+    function typeTagHTML(type) {
+      if (!type) return '<span style="font-size:11px;color:#ccc;">No type</span>';
+      const cfg = TYPE_COLORS[type] || { bg: "#eee", border: "none" };
+      const border = cfg.border !== "none" ? `border:${cfg.border};` : "";
+      return `<span class="type-tag" style="background:${cfg.bg};${border}">${type}</span>`;
+    }
 
     function loadLog() {
       try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
       catch { return []; }
     }
 
-    function saveToLog(history, recordDate, rating, recs) {
+    function saveToLog(history, mediaType, recordDate, rating, recs) {
       const entries = loadLog();
-      entries.unshift({
-        date: new Date().toISOString(),
-        recordDate,
-        rating,
-        history,
-        recommendations: recs
-      });
+      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, rating, history, recommendations: recs });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
     }
 
-    function updateEntryRecordDate(index, newDate) {
+    function updateEntry(index, patch) {
       const entries = loadLog();
-      if (entries[index]) {
-        entries[index].recordDate = newDate;
-        localStorage.setItem(LOG_KEY, JSON.stringify(entries));
-      }
+      if (entries[index]) Object.assign(entries[index], patch);
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      renderLog();
+    }
+
+    function removeEntry(index) {
+      if (!confirm("Remove this log entry?")) return;
+      const entries = loadLog();
+      const removed = entries.splice(index, 1)[0];
+      collapsedEntries.delete(removed.date);
+      hiddenSuggestions.delete(removed.date);
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      renderLog();
+    }
+
+    function toggleEntry(dateKey) {
+      if (collapsedEntries.has(dateKey)) collapsedEntries.delete(dateKey);
+      else collapsedEntries.add(dateKey);
+      renderLog();
+    }
+
+    function toggleAllEntries() {
+      const entries = loadLog();
+      const allCollapsed = entries.length > 0 && entries.every(e => collapsedEntries.has(e.date));
+      if (allCollapsed) { collapsedEntries.clear(); }
+      else { entries.forEach(e => collapsedEntries.add(e.date)); }
+      renderLog();
+    }
+
+    function toggleSuggestions(dateKey) {
+      if (hiddenSuggestions.has(dateKey)) hiddenSuggestions.delete(dateKey);
+      else hiddenSuggestions.add(dateKey);
       renderLog();
     }
 
     function formatDate(iso) {
       if (!iso) return "—";
-      const d = new Date(iso);
-      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function typeOptions(selected) {
+      return ["Film","Television Series","Game","Song","Album","Book"].map(t =>
+        `<option value="${t}"${t === selected ? " selected" : ""}>${t}</option>`
+      ).join("");
     }
 
     function renderLog() {
       const entries = loadLog();
       const container = document.getElementById("log");
+      const collapseBtn = document.getElementById("collapse-all-btn");
 
       if (entries.length === 0) {
         container.innerHTML = '<p class="log-empty">No entries yet — get some recommendations to start your log.</p>';
+        if (collapseBtn) collapseBtn.style.display = "none";
         return;
       }
 
+      if (collapseBtn) {
+        collapseBtn.style.display = "";
+        const allCollapsed = entries.every(e => collapsedEntries.has(e.date));
+        collapseBtn.textContent = allCollapsed ? "Expand all" : "Collapse all";
+      }
+
       container.innerHTML = entries.map((entry, index) => {
+        const isCollapsed = collapsedEntries.has(entry.date);
+        const isSuggHidden = hiddenSuggestions.has(entry.date);
+        const recs = entry.recommendations || [];
+
         const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
           year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
         });
-        const recordDisplay = entry.recordDate
-          ? formatDate(entry.recordDate + "T12:00:00")
-          : "Not set";
+        const recordDisplay = entry.recordDate ? formatDate(entry.recordDate) : "Not set";
+        const chevron = isCollapsed ? "▸" : "▾";
 
+        // Grouped recommendations
         const grouped = {};
-        for (const r of (entry.recommendations || [])) {
+        for (const r of recs) {
           if (!grouped[r.type]) grouped[r.type] = [];
           grouped[r.type].push(r);
         }
-
         const sortedTypes = Object.keys(grouped).sort(
           (a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b)
         );
-
-        const groupsHTML = sortedTypes.length === 0 ? "" : sortedTypes.map(type => `
+        const groupsHTML = sortedTypes.map(type => `
           <div class="log-type-group">
             <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
             ${grouped[type].map(r => `
               <div class="log-item">
                 <span class="log-item-title">${r.title}</span>
                 <span class="log-item-reason"> — ${r.reason}</span>
+              </div>`).join("")}
+          </div>`).join("");
+
+        const bodyHTML = isCollapsed ? "" : `
+          <div class="log-entry-body">
+            <div class="log-history">${entry.history}</div>
+            ${recs.length > 0 ? `
+              <div class="sugg-header">
+                <span class="sugg-label">Suggestions</span>
+                <button class="btn-inline muted" onclick="toggleSuggestions('${entry.date}')">
+                  ${isSuggHidden ? "Show suggestions" : "Hide suggestions"}
+                </button>
               </div>
-            `).join("")}
-          </div>
-        `).join("");
+              ${isSuggHidden ? "" : `<div>${groupsHTML}</div>`}
+            ` : ""}
+          </div>`;
 
         return `
           <div class="log-entry" id="entry-${index}">
             <div class="log-entry-meta">
-              <div class="log-entry-dates">
+              <div class="log-entry-left">
+                <div class="log-entry-top">
+                  <button class="btn-chevron" onclick="toggleEntry('${entry.date}')">${chevron}</button>
+                  <span id="type-display-${index}" style="display:inline-flex;align-items:center;gap:6px;">
+                    ${typeTagHTML(entry.mediaType)}
+                    <button class="btn-inline muted" onclick="startEditType(${index})">Edit</button>
+                  </span>
+                  <span class="inline-edit" id="type-edit-${index}" style="display:none;">
+                    <select id="type-select-${index}" onchange="updateSelectColor(this)" style="font-size:12px;padding:3px 7px;">
+                      <option value="">— Select —</option>
+                      ${typeOptions(entry.mediaType || "")}
+                    </select>
+                    <button class="btn-isave" onclick="saveEditType(${index})">Save</button>
+                    <button class="btn-icancel" onclick="cancelEditType(${index})">Cancel</button>
+                  </span>
+                </div>
+                ${isCollapsed ? `<span class="log-entry-logged">Logged: ${loggedDate}</span>` : `
                 <span class="log-entry-logged">Logged: ${loggedDate}</span>
                 <span class="log-entry-record" id="record-display-${index}">
                   Record date: ${recordDisplay}
-                  <button class="btn-edit-date" onclick="startEditDate(${index}, '${entry.recordDate || ''}')">Edit</button>
+                  <button class="btn-inline muted" onclick="startEditDate(${index}, '${entry.recordDate || ''}')">Edit</button>
                 </span>
-                <span class="record-date-edit" id="record-edit-${index}" style="display:none;">
+                <span class="inline-edit" id="record-edit-${index}" style="display:none;">
                   <input type="date" id="record-input-${index}" value="${entry.recordDate || new Date().toISOString().slice(0,10)}" />
-                  <button class="btn-save-date" onclick="saveEditDate(${index})">Save</button>
-                  <button class="btn-cancel-date" onclick="cancelEditDate(${index})">Cancel</button>
-                </span>
+                  <button class="btn-isave" onclick="saveEditDate(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelEditDate(${index})">Cancel</button>
+                </span>`}
               </div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;">
+              <div class="log-entry-right">
                 <span class="log-entry-rating">Enjoyed: ${entry.rating}/10</span>
-                <button class="btn-remove" onclick="removeEntry(${index})">Remove</button>
+                <button class="btn-inline danger" onclick="removeEntry(${index})">Remove</button>
               </div>
             </div>
-            <div class="log-history">${entry.history}</div>
-            ${groupsHTML}
-          </div>
-        `;
+            ${bodyHTML}
+          </div>`;
       }).join("");
+
+      // Re-apply select colors for any visible type-edit selects
+      entries.forEach((_, index) => {
+        const sel = document.getElementById(`type-select-${index}`);
+        if (sel) updateSelectColor(sel);
+      });
     }
 
+    // ── Type editing ──
+    function startEditType(index) {
+      document.getElementById(`type-display-${index}`).style.display = "none";
+      document.getElementById(`type-edit-${index}`).style.display = "flex";
+      const sel = document.getElementById(`type-select-${index}`);
+      if (sel) updateSelectColor(sel);
+    }
+
+    function saveEditType(index) {
+      const val = document.getElementById(`type-select-${index}`).value;
+      updateEntry(index, { mediaType: val });
+    }
+
+    function cancelEditType(index) {
+      document.getElementById(`type-display-${index}`).style.display = "inline-flex";
+      document.getElementById(`type-edit-${index}`).style.display = "none";
+    }
+
+    // ── Date editing ──
     function startEditDate(index, currentDate) {
       document.getElementById(`record-display-${index}`).style.display = "none";
-      const editRow = document.getElementById(`record-edit-${index}`);
-      editRow.style.display = "flex";
+      document.getElementById(`record-edit-${index}`).style.display = "flex";
       if (currentDate) document.getElementById(`record-input-${index}`).value = currentDate;
     }
 
     function saveEditDate(index) {
-      const val = document.getElementById(`record-input-${index}`).value;
-      updateEntryRecordDate(index, val);
+      updateEntry(index, { recordDate: document.getElementById(`record-input-${index}`).value });
     }
 
     function cancelEditDate(index) {
@@ -721,6 +768,7 @@
       document.getElementById(`record-edit-${index}`).style.display = "none";
     }
 
+    // ── Manual add ──
     function toggleAddForm() {
       const form = document.getElementById("manual-form");
       const visible = form.style.display !== "none";
@@ -729,49 +777,42 @@
         document.getElementById("manual-date").value = new Date().toISOString().slice(0, 10);
         document.getElementById("manual-history").value = "";
         document.getElementById("manual-rating").value = "5";
+        const sel = document.getElementById("manual-type");
+        sel.value = "";
+        updateSelectColor(sel);
       }
     }
 
     function addManualEntry() {
       const history = document.getElementById("manual-history").value.trim();
       if (!history) { alert("Please describe some media first."); return; }
+      const mediaType  = document.getElementById("manual-type").value;
       const recordDate = document.getElementById("manual-date").value;
-      const rating = document.getElementById("manual-rating").value;
+      const rating     = document.getElementById("manual-rating").value;
       const entries = loadLog();
-      entries.unshift({
-        date: new Date().toISOString(),
-        recordDate,
-        rating,
-        history,
-        recommendations: [],
-        manual: true
-      });
+      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, rating, history, recommendations: [], manual: true });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       toggleAddForm();
       renderLog();
     }
 
-    function removeEntry(index) {
-      if (!confirm("Remove this log entry?")) return;
-      const entries = loadLog();
-      entries.splice(index, 1);
-      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
-      renderLog();
-    }
-
+    // ── Export ──
     function exportCSV() {
       const entries = loadLog();
       if (entries.length === 0) { alert("No log entries to export."); return; }
-
-      const rows = [["Logged Date", "Record Date", "Rating", "Type", "Title", "Reason", "History"]];
+      const rows = [["Logged Date", "Record Date", "Media Type", "Rating", "Rec Type", "Title", "Reason", "History"]];
       for (const entry of entries) {
         const logged = new Date(entry.date).toLocaleString();
         const record = entry.recordDate || "";
-        for (const r of entry.recommendations) {
-          rows.push([logged, record, entry.rating, r.type, r.title, r.reason, entry.history.replace(/\n/g, " ")]);
+        const recs = entry.recommendations || [];
+        if (recs.length === 0) {
+          rows.push([logged, record, entry.mediaType || "", entry.rating, "", "", "", entry.history.replace(/\n/g, " ")]);
+        } else {
+          for (const r of recs) {
+            rows.push([logged, record, entry.mediaType || "", entry.rating, r.type, r.title, r.reason, entry.history.replace(/\n/g, " ")]);
+          }
         }
       }
-
       const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
       const a = document.createElement("a");
@@ -783,17 +824,21 @@
     function clearLog() {
       if (!confirm("Clear your entire media log? This cannot be undone.")) return;
       localStorage.removeItem(LOG_KEY);
+      collapsedEntries.clear();
+      hiddenSuggestions.clear();
       renderLog();
     }
 
+    // ── Get recommendations ──
     async function getRecommendations() {
-      const history = document.getElementById("history").value.trim();
+      const history    = document.getElementById("history").value.trim();
+      const mediaType  = document.getElementById("media-type").value;
       const recordDate = document.getElementById("record-date").value;
-      const rating = document.getElementById("rating").value;
-      const apiKey = document.getElementById("api-key").value.trim();
-      const btn = document.getElementById("go-btn");
-      const status = document.getElementById("status");
-      const results = document.getElementById("results");
+      const rating     = document.getElementById("rating").value;
+      const apiKey     = document.getElementById("api-key").value.trim();
+      const btn        = document.getElementById("go-btn");
+      const status     = document.getElementById("status");
+      const results    = document.getElementById("results");
 
       if (!history) {
         status.textContent = "Please describe some things you've watched, read, or listened to.";
@@ -867,10 +912,9 @@ Example format:
             <div class="result-number">#${i + 1} &mdash; ${r.type}</div>
             <div class="result-title">${r.title}</div>
             <div class="result-reason">${r.reason}</div>
-          </div>
-        `).join("");
+          </div>`).join("");
 
-        saveToLog(history, recordDate, rating, recs);
+        saveToLog(history, mediaType, recordDate, rating, recs);
 
       } catch (err) {
         status.textContent = "";
