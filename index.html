@@ -239,6 +239,16 @@
       background: #f0f0ee;
     }
 
+    .log-actions .btn-add {
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #1a1a1a;
+    }
+
+    .log-actions .btn-add:hover {
+      background: #333;
+    }
+
     .log-actions .btn-clear {
       background: #fff;
       color: #c00;
@@ -247,6 +257,99 @@
 
     .log-actions .btn-clear:hover {
       background: #fff3f3;
+    }
+
+    .manual-form {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+
+    .manual-form label {
+      margin-top: 10px;
+    }
+
+    .manual-form label:first-child {
+      margin-top: 0;
+    }
+
+    .manual-form textarea {
+      margin-bottom: 0;
+    }
+
+    .manual-form-row {
+      display: flex;
+      gap: 12px;
+      margin: 10px 0;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .manual-form-row > div {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .manual-form-row input[type="date"],
+    .manual-form-row select {
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: sans-serif;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .manual-form-row input[type="date"]:focus,
+    .manual-form-row select:focus {
+      outline: none;
+      border-color: #999;
+    }
+
+    .manual-form-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .manual-form-btns button {
+      width: auto;
+      padding: 9px 18px;
+      font-size: 13px;
+    }
+
+    .btn-form-cancel {
+      background: #fff;
+      color: #444;
+      border: 1px solid #ddd;
+    }
+
+    .btn-form-cancel:hover {
+      background: #f0f0ee;
+    }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      text-decoration: underline;
+      font-weight: 400;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .btn-remove:hover {
+      color: #c00;
+      background: none;
     }
 
     .log-empty {
@@ -456,10 +559,37 @@
     <div class="log-header">
       <h2>Media Log</h2>
       <div class="log-actions">
+        <button class="btn-add" onclick="toggleAddForm()">+ Add</button>
         <button class="btn-export" onclick="exportCSV()">Export CSV</button>
         <button class="btn-clear" onclick="clearLog()">Clear log</button>
       </div>
     </div>
+
+    <div class="manual-form" id="manual-form" style="display:none;">
+      <label for="manual-history">What did you watch, read, or listen to?</label>
+      <textarea id="manual-history" rows="4" placeholder="e.g.&#10;- Watched Parasite&#10;- Read The Road&#10;- Played Hollow Knight"></textarea>
+      <div class="manual-form-row">
+        <div>
+          <label for="manual-date">Date of record</label>
+          <input type="date" id="manual-date" />
+        </div>
+        <div>
+          <label for="manual-rating">Enjoyment</label>
+          <select id="manual-rating">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5" selected>5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option>
+            <option value="9">9</option><option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <div class="manual-form-btns">
+        <button onclick="addManualEntry()">Save entry</button>
+        <button class="btn-form-cancel" onclick="toggleAddForm()">Cancel</button>
+      </div>
+    </div>
+
     <div id="log"></div>
   </div>
 
@@ -526,7 +656,7 @@
           : "Not set";
 
         const grouped = {};
-        for (const r of entry.recommendations) {
+        for (const r of (entry.recommendations || [])) {
           if (!grouped[r.type]) grouped[r.type] = [];
           grouped[r.type].push(r);
         }
@@ -535,7 +665,7 @@
           (a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b)
         );
 
-        const groupsHTML = sortedTypes.map(type => `
+        const groupsHTML = sortedTypes.length === 0 ? "" : sortedTypes.map(type => `
           <div class="log-type-group">
             <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
             ${grouped[type].map(r => `
@@ -562,7 +692,10 @@
                   <button class="btn-cancel-date" onclick="cancelEditDate(${index})">Cancel</button>
                 </span>
               </div>
-              <span class="log-entry-rating">Enjoyed: ${entry.rating}/10</span>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                <span class="log-entry-rating">Enjoyed: ${entry.rating}/10</span>
+                <button class="btn-remove" onclick="removeEntry(${index})">Remove</button>
+              </div>
             </div>
             <div class="log-history">${entry.history}</div>
             ${groupsHTML}
@@ -586,6 +719,44 @@
     function cancelEditDate(index) {
       document.getElementById(`record-display-${index}`).style.display = "flex";
       document.getElementById(`record-edit-${index}`).style.display = "none";
+    }
+
+    function toggleAddForm() {
+      const form = document.getElementById("manual-form");
+      const visible = form.style.display !== "none";
+      form.style.display = visible ? "none" : "block";
+      if (!visible) {
+        document.getElementById("manual-date").value = new Date().toISOString().slice(0, 10);
+        document.getElementById("manual-history").value = "";
+        document.getElementById("manual-rating").value = "5";
+      }
+    }
+
+    function addManualEntry() {
+      const history = document.getElementById("manual-history").value.trim();
+      if (!history) { alert("Please describe some media first."); return; }
+      const recordDate = document.getElementById("manual-date").value;
+      const rating = document.getElementById("manual-rating").value;
+      const entries = loadLog();
+      entries.unshift({
+        date: new Date().toISOString(),
+        recordDate,
+        rating,
+        history,
+        recommendations: [],
+        manual: true
+      });
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      toggleAddForm();
+      renderLog();
+    }
+
+    function removeEntry(index) {
+      if (!confirm("Remove this log entry?")) return;
+      const entries = loadLog();
+      entries.splice(index, 1);
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      renderLog();
     }
 
     function exportCSV() {
