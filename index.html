@@ -92,11 +92,7 @@
       transition: background 0.15s, color 0.15s;
     }
     .nav-log-btn:hover { background: var(--surface2); color: var(--text); }
-    .nav-log-btn.active {
-      background: var(--btn-bg);
-      color: var(--btn-fg);
-      border-color: var(--btn-bg);
-    }
+    .nav-log-btn.active { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
     .nav-log-btn.active:hover { background: var(--btn-hover); }
 
     .nav-badge {
@@ -110,16 +106,11 @@
       text-align: center;
       line-height: 1.6;
     }
-    .nav-log-btn.active .nav-badge {
-      background: rgba(255,255,255,0.25);
-      color: var(--btn-fg);
-    }
-    body.dark .nav-log-btn.active .nav-badge {
-      background: rgba(0,0,0,0.2);
-    }
+    .nav-log-btn.active .nav-badge { background: rgba(255,255,255,0.25); color: var(--btn-fg); }
+    body.dark .nav-log-btn.active .nav-badge { background: rgba(0,0,0,0.2); }
 
-    /* ── Typography ── */
-    .subtitle { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
+    /* ── Form elements ── */
+    .subtitle { font-size: 14px; color: var(--text3); margin-bottom: 20px; }
 
     label {
       display: block;
@@ -128,6 +119,23 @@
       margin-bottom: 6px;
       color: var(--text2);
     }
+
+    .title-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: sans-serif;
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      box-sizing: border-box;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      margin-bottom: 14px;
+    }
+    .title-input:focus { outline: none; border-color: var(--text4); }
+    .title-input::placeholder { color: var(--text5); font-weight: 400; }
 
     textarea {
       width: 100%;
@@ -187,10 +195,7 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 16px 18px; margin-bottom: 12px;
     }
-    .result-number {
-      font-size: 11px; font-weight: 600; color: var(--text4);
-      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
-    }
+    .result-number { font-size: 11px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
     .result-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
     .result-title a { color: var(--text); text-decoration: underline; text-decoration-color: var(--link-deco); }
     .result-title a:hover { text-decoration-color: var(--text); }
@@ -209,11 +214,7 @@
     /* ── Log view ── */
     #view-log h2 { font-size: 18px; font-weight: 600; margin: 0; }
 
-    .log-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 16px; gap: 8px;
-    }
-
+    .log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 8px; }
     .log-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .log-actions button { width: auto; padding: 7px 14px; font-size: 12px; border-radius: 6px; }
 
@@ -250,13 +251,22 @@
     .btn-form-cancel { background: var(--surface); color: var(--text2); border: 1px solid var(--border2); }
     .btn-form-cancel:hover { background: var(--surface2); }
 
+    /* ── Log entry list ── */
     .log-entry {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
     }
     .log-entry-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-    .log-entry-left { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+    .log-entry-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
     .log-entry-top  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .entry-title-btn {
+      background: none; border: none; padding: 0; width: auto;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      cursor: pointer; text-align: left; letter-spacing: -0.01em;
+      transition: color 0.15s; line-height: 1.3;
+    }
+    .entry-title-btn:hover { color: var(--text3); background: none; text-decoration: underline; text-decoration-color: var(--border2); }
 
     .btn-chevron {
       background: none; border: none; color: var(--text5);
@@ -269,15 +279,9 @@
 
     .log-entry-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
     .log-entry-rating-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-    .log-entry-rating {
-      font-size: 12px; font-weight: 600; color: var(--text2);
-      background: var(--surface2); border-radius: 5px; padding: 2px 8px; white-space: nowrap;
-    }
+    .log-entry-rating { font-size: 12px; font-weight: 600; color: var(--text2); background: var(--surface2); border-radius: 5px; padding: 2px 8px; white-space: nowrap; }
 
-    .btn-inline {
-      background: none; border: none; cursor: pointer;
-      padding: 0; width: auto; font-size: 11px; text-decoration: underline; font-weight: 400;
-    }
+    .btn-inline { background: none; border: none; cursor: pointer; padding: 0; width: auto; font-size: 11px; text-decoration: underline; font-weight: 400; }
     .btn-inline.muted  { color: var(--text4); }
     .btn-inline.muted:hover  { color: var(--text2); background: none; }
     .btn-inline.danger { color: var(--text5); }
@@ -285,16 +289,14 @@
     body.dark .btn-inline.danger:hover { color: #ff8080; }
 
     .inline-edit { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
-    .inline-edit input[type="date"],
-    .inline-edit select {
+    .inline-edit input[type="date"], .inline-edit select {
       padding: 3px 7px; font-size: 12px;
       border: 1px solid var(--border2); border-radius: 6px;
       background: var(--surface); color: var(--text);
       transition: background 0.2s, color 0.2s;
     }
-    .inline-edit input[type="date"]:focus,
-    .inline-edit select:focus { outline: none; border-color: var(--text4); }
+    .inline-edit input[type="date"]:focus, .inline-edit select:focus { outline: none; border-color: var(--text4); }
+    .inline-edit .date-range-label { font-size: 10px; color: var(--text4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
     .log-review-edit-area {
       width: 100%; padding: 6px 8px; font-size: 12px; font-family: sans-serif;
@@ -305,18 +307,8 @@
     }
     .log-review-edit-area:focus { outline: none; border-color: var(--text4); }
 
-    .log-entry-review-label {
-      font-size: 10px; font-weight: 700; color: var(--text4);
-      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;
-    }
-    .log-entry-review-text {
-      font-size: 12px; color: var(--text2); line-height: 1.5; white-space: pre-wrap; margin-bottom: 2px;
-    }
-
-    .inline-edit .date-range-label {
-      font-size: 10px; color: var(--text4); font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.04em;
-    }
+    .log-entry-review-label { font-size: 10px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .log-entry-review-text  { font-size: 12px; color: var(--text2); line-height: 1.5; white-space: pre-wrap; margin-bottom: 2px; }
 
     .btn-isave, .btn-icancel {
       background: none; border: 1px solid var(--border2); border-radius: 5px;
@@ -328,20 +320,110 @@
     .btn-icancel:hover { background: var(--surface2); }
 
     .log-entry-body { margin-top: 12px; }
-    .log-history {
-      font-size: 12px; color: var(--text3); line-height: 1.5;
-      border-left: 2px solid var(--border); padding-left: 10px;
-      margin-bottom: 10px; white-space: pre-wrap;
-    }
+    .log-history { font-size: 12px; color: var(--text3); line-height: 1.5; border-left: 2px solid var(--border); padding-left: 10px; margin-bottom: 10px; white-space: pre-wrap; }
     .sugg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .sugg-label { font-size: 11px; font-weight: 700; color: var(--text5); text-transform: uppercase; letter-spacing: 0.06em; }
-    .log-type-group { margin-bottom: 10px; }
-    .log-type-label { font-size: 11px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-    .log-item { font-size: 13px; color: var(--text); padding: 3px 0; border-bottom: 1px solid var(--border); }
+    .sugg-label  { font-size: 11px; font-weight: 700; color: var(--text5); text-transform: uppercase; letter-spacing: 0.06em; }
+    .log-type-group  { margin-bottom: 10px; }
+    .log-type-label  { font-size: 11px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .log-item        { font-size: 13px; color: var(--text); padding: 3px 0; border-bottom: 1px solid var(--border); }
     .log-item:last-child { border-bottom: none; }
-    .log-item-title { font-weight: 600; }
+    .log-item-title  { font-weight: 600; }
     .log-item-reason { color: var(--text3); font-size: 12px; }
 
+    /* ── Detail view ── */
+    .detail-back-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: none; border: none; padding: 0; width: auto;
+      font-size: 13px; color: var(--text3); cursor: pointer; margin-bottom: 14px;
+      transition: color 0.15s;
+    }
+    .detail-back-btn:hover { color: var(--text); background: none; }
+
+    .detail-hero-card {
+      border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 14px;
+    }
+
+    .detail-hero-top {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 20px; transition: background 0.3s;
+    }
+
+    .detail-poster {
+      width: 96px; height: 144px; border-radius: 7px; overflow: hidden;
+      flex-shrink: 0; box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+      background: var(--surface2);
+    }
+    .detail-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .poster-fallback {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px; font-weight: 800; color: rgba(255,255,255,0.92);
+      letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.28);
+    }
+
+    .detail-hero-info { flex: 1; min-width: 0; padding-top: 2px; }
+
+    .detail-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+
+    .detail-wiki-link {
+      font-size: 11px; color: var(--text4); text-decoration: none;
+      border: 1px solid var(--border2); border-radius: 4px; padding: 2px 8px;
+      display: inline-flex; align-items: center; gap: 3px;
+      transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .detail-wiki-link:hover { color: var(--text2); border-color: var(--text3); }
+
+    .detail-title-row { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 2px; }
+    .detail-title {
+      font-size: 21px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.02em; line-height: 1.2; margin: 0; word-break: break-word;
+    }
+    .detail-edit-title-btn {
+      background: none; border: none; padding: 0; width: auto;
+      font-size: 10px; color: var(--text5); cursor: pointer;
+      text-decoration: underline; flex-shrink: 0; margin-top: 5px;
+      transition: color 0.15s;
+    }
+    .detail-edit-title-btn:hover { color: var(--text3); background: none; }
+
+    .detail-hero-description {
+      border-top: 1px solid var(--border); padding: 14px 20px;
+      font-size: 13px; color: var(--text2); line-height: 1.75;
+    }
+    .detail-hero-description.dim { color: var(--text4); font-style: italic; }
+
+    .detail-log-card {
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; background: var(--surface); margin-bottom: 14px;
+    }
+    .detail-log-card-header {
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      font-size: 10px; font-weight: 700; color: var(--text4);
+      text-transform: uppercase; letter-spacing: 0.08em; background: var(--surface2);
+    }
+    .detail-log-row { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .detail-log-row:last-child { border-bottom: none; }
+    .detail-row-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .detail-field-label { font-size: 10px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .detail-field-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+    .rating-big { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+    .rating-dots { display: flex; gap: 4px; }
+    .rating-dot  { width: 7px; height: 7px; border-radius: 50%; }
+    .rating-dot.filled { background: var(--text); }
+    .rating-dot.empty  { background: var(--border2); }
+
+    .det-inline-input {
+      padding: 5px 9px; font-size: 13px; font-family: sans-serif;
+      border: 1px solid var(--border2); border-radius: 6px;
+      background: var(--surface); color: var(--text);
+      transition: background 0.2s, color 0.2s;
+    }
+    .det-inline-input:focus { outline: none; border-color: var(--text4); }
+    .det-inline-input[type="date"] { font-size: 12px; padding: 4px 8px; }
+
+    /* ── Misc ── */
     body.dark .form-row select,
     body.dark .manual-form-row select { color-scheme: dark; }
 
@@ -370,8 +452,11 @@
   <div id="view-home">
     <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
 
-    <label for="history">Your recent watches, reads, or listens</label>
-    <textarea id="history" rows="6"
+    <label for="entry-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+    <input type="text" id="entry-title" class="title-input" placeholder="e.g. Inception, Hollow Knight, Dune" />
+
+    <label for="history">Context for recommendations</label>
+    <textarea id="history" rows="5"
       placeholder="e.g.
 - Watched Inception and loved it
 - Read Dune, really enjoyed the world-building
@@ -392,12 +477,10 @@
           <option value="Book">Book</option>
         </select>
       </div>
-      <!-- Single date (non-Book/Game) -->
       <div id="main-date-single">
         <label for="record-date">Date of record</label>
         <input type="date" id="record-date" />
       </div>
-      <!-- Date range (Book / Game) -->
       <div id="main-date-start" style="display:none;">
         <label for="start-date">Start date</label>
         <input type="date" id="start-date" />
@@ -427,7 +510,6 @@
     <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. It stays in your browser only.</p>
 
     <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
-
     <p id="status"></p>
     <div id="results"></div>
   </div>
@@ -445,8 +527,11 @@
     </div>
 
     <div class="manual-form" id="manual-form" style="display:none;">
-      <label for="manual-history">What did you watch, read, or listen to?</label>
-      <textarea id="manual-history" rows="4" placeholder="e.g.&#10;- Watched Parasite&#10;- Read The Road&#10;- Played Hollow Knight"></textarea>
+      <label for="manual-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+      <input type="text" id="manual-title" class="title-input" placeholder="e.g. Parasite, The Road, Hollow Knight" style="margin-bottom:10px;" />
+
+      <label for="manual-history">Notes</label>
+      <textarea id="manual-history" rows="3" placeholder="e.g.&#10;- Watched Parasite&#10;- Read The Road&#10;- Played Hollow Knight"></textarea>
       <div class="manual-form-row">
         <div>
           <label for="manual-type">Media type</label>
@@ -460,12 +545,10 @@
             <option value="Book">Book</option>
           </select>
         </div>
-        <!-- Single date -->
         <div id="manual-date-single">
           <label for="manual-date">Date of record</label>
           <input type="date" id="manual-date" />
         </div>
-        <!-- Date range (Book / Game) -->
         <div id="manual-date-start" style="display:none;">
           <label for="manual-start-date">Start date</label>
           <input type="date" id="manual-start-date" />
@@ -496,11 +579,36 @@
     <div id="log"></div>
   </div>
 
+  <!-- ── Detail view ── -->
+  <div id="view-detail" style="display:none;">
+    <button class="detail-back-btn" onclick="showView('log')">← Back to log</button>
+
+    <div class="detail-hero-card">
+      <div class="detail-hero-top" id="detail-hero-top">
+        <div class="detail-poster" id="detail-poster"></div>
+        <div class="detail-hero-info">
+          <div class="detail-meta" id="detail-meta"></div>
+          <div class="detail-title-row">
+            <h2 class="detail-title" id="detail-title"></h2>
+            <button class="detail-edit-title-btn" id="detail-edit-title-btn" onclick="startDetTitle()">Edit</button>
+          </div>
+          <div id="detail-title-edit" style="display:none;margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="detail-hero-description" id="detail-description"></div>
+    </div>
+
+    <div class="detail-log-card" id="detail-log-card"></div>
+    <div id="detail-sugg-card"></div>
+  </div>
+
   <button class="theme-toggle" id="theme-toggle" onclick="toggleDarkMode()">☾ Dark mode</button>
 
   <script>
     const LOG_KEY   = "jdrecs_log";
     const THEME_KEY = "jdlogs_theme";
+
+    let currentDetailIndex = null;
 
     const TYPE_COLORS = {
       "Film":              { bg: "#ffffff", border: "1px solid #bbb" },
@@ -515,8 +623,8 @@
       "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
       "Album": "Albums", "Podcast": "Podcasts", "Video Game": "Video Games"
     };
-    const TYPE_ORDER   = ["Movie", "TV Show", "Book", "Album", "Podcast", "Video Game"];
-    const RANGE_TYPES  = new Set(["Book", "Game"]);
+    const TYPE_ORDER  = ["Movie", "TV Show", "Book", "Album", "Podcast", "Video Game"];
+    const RANGE_TYPES = new Set(["Book", "Game"]);
 
     const collapsedEntries  = new Set();
     const hiddenSuggestions = new Set();
@@ -538,18 +646,23 @@
     })();
 
     // ── View routing ──
-    function showView(v) {
-      document.getElementById("view-home").style.display = v === "home" ? "" : "none";
-      document.getElementById("view-log").style.display  = v === "log"  ? "" : "none";
-      document.getElementById("nav-log-btn").classList.toggle("active", v === "log");
+    function showView(v, idx) {
+      ["home", "log", "detail"].forEach(name => {
+        document.getElementById(`view-${name}`).style.display = name === v ? "" : "none";
+      });
+      document.getElementById("nav-log-btn").classList.toggle("active", v !== "home");
+      if (v === "detail" && idx !== undefined) {
+        currentDetailIndex = idx;
+        loadDetailView(idx);
+      }
     }
 
     // ── Nav badge ──
     function updateNavBadge() {
       const count = loadLog().length;
       const badge = document.getElementById("nav-badge");
-      badge.textContent    = count;
-      badge.style.display  = count > 0 ? "" : "none";
+      badge.textContent   = count;
+      badge.style.display = count > 0 ? "" : "none";
     }
 
     // ── Dark mode ──
@@ -593,15 +706,56 @@
       return `<span class="type-tag" style="background:${cfg.bg};${border}">${type}</span>`;
     }
 
+    // ── Helpers ──
+    function formatDate(iso) {
+      if (!iso) return "—";
+      return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function typeOptions(selected) {
+      return ["Film","Television Series","Game","Song","Album","Book"]
+        .map(t => `<option value="${t}"${t === selected ? " selected" : ""}>${t}</option>`).join("");
+    }
+
+    function ratingOptions(selected) {
+      return [1,2,3,4,5,6,7,8,9,10]
+        .map(n => `<option value="${n}"${n == selected ? " selected" : ""}>${n}</option>`).join("");
+    }
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1,3), 16);
+      const g = parseInt(hex.slice(3,5), 16);
+      const b = parseInt(hex.slice(5,7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function darkenHex(hex, factor) {
+      const r = Math.round(parseInt(hex.slice(1,3), 16) * factor);
+      const g = Math.round(parseInt(hex.slice(3,5), 16) * factor);
+      const b = Math.round(parseInt(hex.slice(5,7), 16) * factor);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function getEntryTitle(entry) {
+      if (entry.title) return entry.title;
+      const lines = (entry.history || "").split("\n").filter(l => l.trim());
+      if (!lines.length) return "Untitled";
+      return lines[0]
+        .replace(/^[-•*]\s*/, "")
+        .replace(/^(watched|read|played|listened to|saw|finished)\s+/i, "")
+        .replace(/\s+(and\s+.+|,\s*.+)$/i, "")
+        .trim() || "Untitled";
+    }
+
     // ── Storage ──
     function loadLog() {
       try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
       catch { return []; }
     }
 
-    function saveToLog(history, mediaType, recordDate, startDate, endDate, rating, review, recs) {
+    function saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs) {
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs });
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
     }
@@ -611,6 +765,10 @@
       if (entries[index]) Object.assign(entries[index], patch);
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
+      const detailEl = document.getElementById("view-detail");
+      if (currentDetailIndex === index && detailEl && detailEl.style.display !== "none") {
+        loadDetailView(index);
+      }
     }
 
     function removeEntry(index) {
@@ -620,6 +778,8 @@
       collapsedEntries.delete(removed.date);
       hiddenSuggestions.delete(removed.date);
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      currentDetailIndex = null;
+      showView("log");
       renderLog();
     }
 
@@ -642,23 +802,7 @@
       renderLog();
     }
 
-    // ── Helpers ──
-    function formatDate(iso) {
-      if (!iso) return "—";
-      return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-    }
-
-    function typeOptions(selected) {
-      return ["Film","Television Series","Game","Song","Album","Book"]
-        .map(t => `<option value="${t}"${t === selected ? " selected" : ""}>${t}</option>`).join("");
-    }
-
-    function ratingOptions(selected) {
-      return [1,2,3,4,5,6,7,8,9,10]
-        .map(n => `<option value="${n}"${n == selected ? " selected" : ""}>${n}</option>`).join("");
-    }
-
-    // ── Render ──
+    // ── Render log list ──
     function renderLog() {
       const entries    = loadLog();
       const container  = document.getElementById("log");
@@ -684,12 +828,12 @@
         const dateKey      = entry.date;
         const isRange      = RANGE_TYPES.has(entry.mediaType);
         const nowIso       = new Date().toISOString().slice(0, 10);
+        const displayTitle = getEntryTitle(entry);
 
         const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
           year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
         });
 
-        // ── Date display & edit HTML ──
         let datesHTML;
         if (isRange) {
           const startDisplay = entry.startDate ? formatDate(entry.startDate) : "Not set";
@@ -723,7 +867,6 @@
             </span>`;
         }
 
-        // ── Recommendations ──
         const grouped = {};
         for (const r of recs) {
           if (!grouped[r.type]) grouped[r.type] = [];
@@ -776,9 +919,12 @@
               <div class="log-entry-left">
                 <div class="log-entry-top">
                   <button class="btn-chevron" onclick="toggleEntry('${dateKey}')">${isCollapsed ? "▸" : "▾"}</button>
-                  <span id="type-display-${index}" style="display:inline-flex;align-items:center;gap:6px;">
-                    ${typeTagHTML(entry.mediaType)}
-                    <button class="btn-inline muted" onclick="startEditType(${index})">Edit</button>
+                  ${typeTagHTML(entry.mediaType)}
+                  <button class="entry-title-btn" onclick="showView('detail', ${index})">${displayTitle}</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span id="type-display-${index}" style="display:inline-flex;align-items:center;gap:4px;">
+                    <button class="btn-inline muted" onclick="startEditType(${index})">Edit type</button>
                   </span>
                   <span class="inline-edit" id="type-edit-${index}" style="display:none;">
                     <select id="type-select-${index}" onchange="updateSelectColor(this)" style="font-size:12px;padding:3px 7px;">
@@ -824,9 +970,7 @@
       const sel = document.getElementById(`type-select-${index}`);
       if (sel) updateSelectColor(sel);
     }
-    function saveEditType(index) {
-      updateEntry(index, { mediaType: document.getElementById(`type-select-${index}`).value });
-    }
+    function saveEditType(index) { updateEntry(index, { mediaType: document.getElementById(`type-select-${index}`).value }); }
     function cancelEditType(index) {
       document.getElementById(`type-display-${index}`).style.display = "inline-flex";
       document.getElementById(`type-edit-${index}`).style.display = "none";
@@ -839,8 +983,7 @@
     }
     function saveEditDates(index, isRange) {
       const patch = isRange
-        ? { startDate: document.getElementById(`start-input-${index}`).value,
-            endDate:   document.getElementById(`end-input-${index}`).value }
+        ? { startDate: document.getElementById(`start-input-${index}`).value, endDate: document.getElementById(`end-input-${index}`).value }
         : { recordDate: document.getElementById(`record-input-${index}`).value };
       updateEntry(index, patch);
     }
@@ -854,9 +997,7 @@
       document.getElementById(`rating-display-${index}`).style.display = "none";
       document.getElementById(`rating-edit-${index}`).style.display = "flex";
     }
-    function saveEditRating(index) {
-      updateEntry(index, { rating: document.getElementById(`rating-select-${index}`).value });
-    }
+    function saveEditRating(index) { updateEntry(index, { rating: document.getElementById(`rating-select-${index}`).value }); }
     function cancelEditRating(index) {
       document.getElementById(`rating-display-${index}`).style.display = "flex";
       document.getElementById(`rating-edit-${index}`).style.display = "none";
@@ -868,12 +1009,263 @@
       document.getElementById(`review-edit-${index}`).style.display = "flex";
       document.getElementById(`review-textarea-${index}`).focus();
     }
-    function saveEditReview(index) {
-      updateEntry(index, { review: document.getElementById(`review-textarea-${index}`).value.trim() });
-    }
+    function saveEditReview(index) { updateEntry(index, { review: document.getElementById(`review-textarea-${index}`).value.trim() }); }
     function cancelEditReview(index) {
       document.getElementById(`review-display-${index}`).style.display = "";
       document.getElementById(`review-edit-${index}`).style.display = "none";
+    }
+
+    // ── Detail view ──
+    async function loadDetailView(index) {
+      const entries = loadLog();
+      const entry   = entries[index];
+      if (!entry) { showView("log"); return; }
+
+      const title   = getEntryTitle(entry);
+      const isRange = RANGE_TYPES.has(entry.mediaType);
+      const rawAccent = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+      const accent  = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
+
+      // Hero gradient
+      document.getElementById("detail-hero-top").style.background =
+        `linear-gradient(135deg, ${hexToRgba(accent, 0.22)} 0%, ${hexToRgba(accent, 0.05)} 100%)`;
+
+      // Poster
+      const posterEl = document.getElementById("detail-poster");
+      const initial  = title.charAt(0).toUpperCase();
+      if (entry.thumbnailUrl) {
+        posterEl.innerHTML = `<img src="${entry.thumbnailUrl}" alt="">`;
+      } else {
+        posterEl.innerHTML = `<div class="poster-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
+      }
+
+      // Meta: type tag + wiki link
+      const wikiUrl = entry.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
+      document.getElementById("detail-meta").innerHTML =
+        `${typeTagHTML(entry.mediaType)}
+         <a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+
+      // Title
+      document.getElementById("detail-title").textContent = title;
+      document.getElementById("detail-title").style.display = "";
+      document.getElementById("detail-edit-title-btn").style.display = "";
+      document.getElementById("detail-title-edit").style.display = "none";
+
+      // Description
+      const descEl = document.getElementById("detail-description");
+      if (entry.description !== undefined) {
+        if (entry.description) {
+          descEl.textContent = entry.description;
+          descEl.className   = "detail-hero-description";
+          descEl.style.display = "";
+        } else {
+          descEl.style.display = "none";
+        }
+      } else {
+        descEl.textContent   = "Fetching description…";
+        descEl.className     = "detail-hero-description dim";
+        descEl.style.display = "";
+        fetchAndStoreWiki(index, title);
+      }
+
+      // User log data
+      renderDetailLog(entry, index, isRange);
+
+      // Suggestions
+      const recs = entry.recommendations || [];
+      const suggCard = document.getElementById("detail-sugg-card");
+      if (recs.length > 0) {
+        const grouped = {};
+        for (const r of recs) { if (!grouped[r.type]) grouped[r.type] = []; grouped[r.type].push(r); }
+        const sortedTypes = Object.keys(grouped).sort((a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b));
+        const groupsHTML  = sortedTypes.map(type => `
+          <div class="log-type-group">
+            <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
+            ${grouped[type].map(r => `
+              <div class="log-item">
+                <span class="log-item-title">${r.title}</span>
+                <span class="log-item-reason"> — ${r.reason}</span>
+              </div>`).join("")}
+          </div>`).join("");
+        suggCard.innerHTML = `
+          <div class="detail-log-card">
+            <div class="detail-log-card-header">Suggestions from this session</div>
+            <div style="padding:12px 16px;">${groupsHTML}</div>
+          </div>`;
+      } else {
+        suggCard.innerHTML = "";
+      }
+    }
+
+    function renderDetailLog(entry, index, isRange) {
+      const nowIso = new Date().toISOString().slice(0, 10);
+      const rating = parseInt(entry.rating) || 0;
+      const dots   = Array.from({length: 10}, (_, i) =>
+        `<span class="rating-dot ${i < rating ? "filled" : "empty"}"></span>`).join("");
+
+      let datesDisplay, datesEditHTML;
+      if (isRange) {
+        datesDisplay = `${entry.startDate ? formatDate(entry.startDate) : "—"} → ${entry.endDate ? formatDate(entry.endDate) : "—"}`;
+        datesEditHTML = `
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;min-width:34px;">Start</span>
+              <input type="date" id="det-start" class="det-inline-input" value="${entry.startDate || nowIso}">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;min-width:34px;">End</span>
+              <input type="date" id="det-end" class="det-inline-input" value="${entry.endDate || nowIso}">
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-isave" onclick="saveDetDates(${index},true)">Save</button>
+              <button class="btn-icancel" onclick="cancelDetField('det-dates-display','det-dates-edit')">Cancel</button>
+            </div>
+          </div>`;
+      } else {
+        datesDisplay = entry.recordDate ? formatDate(entry.recordDate) : "—";
+        datesEditHTML = `
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <input type="date" id="det-record" class="det-inline-input" value="${entry.recordDate || nowIso}">
+            <button class="btn-isave" onclick="saveDetDates(${index},false)">Save</button>
+            <button class="btn-icancel" onclick="cancelDetField('det-dates-display','det-dates-edit')">Cancel</button>
+          </div>`;
+      }
+
+      const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
+        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+
+      document.getElementById("detail-log-card").innerHTML = `
+        <div class="detail-log-card-header">Your log</div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div>
+              <div class="detail-field-label">Rating</div>
+              <div id="det-rating-display">
+                <div class="rating-big">${rating}/10</div>
+                <div class="rating-dots">${dots}</div>
+              </div>
+              <div id="det-rating-edit" style="display:none;margin-top:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <select id="det-rating-select" class="det-inline-input">${ratingOptions(entry.rating)}</select>
+                  <button class="btn-isave" onclick="saveDetRating(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelDetField('det-rating-display','det-rating-edit')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-rating-display','det-rating-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div style="flex:1;min-width:0;margin-right:8px;">
+              <div class="detail-field-label">Review</div>
+              <div id="det-review-display">
+                ${entry.review
+                  ? `<div class="detail-field-value" style="white-space:pre-wrap;line-height:1.6;">${entry.review}</div>`
+                  : `<div style="font-size:12px;color:var(--text4);font-style:italic;">No review yet</div>`}
+              </div>
+              <div id="det-review-edit" style="display:none;margin-top:6px;">
+                <textarea id="det-review-textarea" class="log-review-edit-area" rows="4">${entry.review || ""}</textarea>
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                  <button class="btn-isave" onclick="saveDetReview(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelDetField('det-review-display','det-review-edit')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-review-display','det-review-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div>
+              <div class="detail-field-label">Date${isRange ? "s" : ""}</div>
+              <div id="det-dates-display">
+                <div class="detail-field-value">${datesDisplay}</div>
+              </div>
+              <div id="det-dates-edit" style="display:none;">${datesEditHTML}</div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-dates-display','det-dates-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row" style="border-bottom:none;">
+          <div class="detail-field-label">Logged</div>
+          <div class="detail-field-value" style="color:var(--text3);">${loggedDate}</div>
+          ${entry.history ? `<div class="log-history" style="margin:8px 0 0;">${entry.history}</div>` : ""}
+        </div>
+      `;
+    }
+
+    // Generic show/hide for detail edit fields
+    function startDetField(displayId, editId) {
+      document.getElementById(displayId).style.display = "none";
+      document.getElementById(editId).style.display    = "";
+    }
+    function cancelDetField(displayId, editId) {
+      document.getElementById(displayId).style.display = "";
+      document.getElementById(editId).style.display    = "none";
+    }
+
+    // Detail save functions
+    function saveDetRating(index) { updateEntry(index, { rating: document.getElementById("det-rating-select").value }); }
+    function saveDetReview(index) { updateEntry(index, { review: document.getElementById("det-review-textarea").value.trim() }); }
+    function saveDetDates(index, isRange) {
+      const patch = isRange
+        ? { startDate: document.getElementById("det-start").value, endDate: document.getElementById("det-end").value }
+        : { recordDate: document.getElementById("det-record").value };
+      updateEntry(index, patch);
+    }
+
+    // Detail title edit
+    function startDetTitle() {
+      const current = document.getElementById("detail-title").textContent;
+      document.getElementById("detail-title").style.display          = "none";
+      document.getElementById("detail-edit-title-btn").style.display = "none";
+      const editDiv = document.getElementById("detail-title-edit");
+      editDiv.style.display = "";
+      editDiv.innerHTML = `
+        <input type="text" id="det-title-input" class="det-inline-input"
+          value="${current.replace(/"/g,'&quot;')}"
+          style="width:100%;font-size:15px;font-weight:600;box-sizing:border-box;margin-bottom:6px;">
+        <div style="display:flex;gap:6px;">
+          <button class="btn-isave" onclick="saveDetTitle(${currentDetailIndex})">Save</button>
+          <button class="btn-icancel" onclick="cancelDetTitle()">Cancel</button>
+        </div>`;
+      document.getElementById("det-title-input").focus();
+    }
+    function saveDetTitle(index)  { updateEntry(index, { title: document.getElementById("det-title-input").value.trim() }); }
+    function cancelDetTitle() {
+      document.getElementById("detail-title").style.display          = "";
+      document.getElementById("detail-edit-title-btn").style.display = "";
+      document.getElementById("detail-title-edit").style.display     = "none";
+    }
+
+    // ── Wikipedia fetch ──
+    async function fetchWikipediaData(title) {
+      try {
+        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+          headers: { "Accept": "application/json" }
+        });
+        if (!res.ok) return null;
+        const d = await res.json();
+        return {
+          extract:  d.extract  || null,
+          thumbnail: d.thumbnail?.source || null,
+          pageUrl:   d.content_urls?.desktop?.page || null
+        };
+      } catch { return null; }
+    }
+
+    async function fetchAndStoreWiki(index, title) {
+      const wiki  = await fetchWikipediaData(title);
+      const patch = wiki
+        ? { description: wiki.extract || "", thumbnailUrl: wiki.thumbnail || null, wikiUrl: wiki.pageUrl || null }
+        : { description: "" };
+      updateEntry(index, patch);
     }
 
     // ── Manual add ──
@@ -883,6 +1275,7 @@
       form.style.display = visible ? "none" : "block";
       if (!visible) {
         const t = new Date().toISOString().slice(0, 10);
+        document.getElementById("manual-title").value       = "";
         document.getElementById("manual-history").value     = "";
         document.getElementById("manual-rating").value      = "5";
         document.getElementById("manual-date").value        = t;
@@ -897,8 +1290,9 @@
     }
 
     function addManualEntry() {
-      const history   = document.getElementById("manual-history").value.trim();
-      if (!history) { alert("Please describe some media first."); return; }
+      const history = document.getElementById("manual-history").value.trim();
+      if (!history) { alert("Please add some notes first."); return; }
+      const title     = document.getElementById("manual-title").value.trim();
       const mediaType = document.getElementById("manual-type").value;
       const isRange   = RANGE_TYPES.has(mediaType);
       const recordDate  = isRange ? null : document.getElementById("manual-date").value;
@@ -907,7 +1301,7 @@
       const rating      = document.getElementById("manual-rating").value;
       const review      = document.getElementById("manual-review").value.trim();
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true });
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       toggleAddForm();
       renderLog();
@@ -917,23 +1311,21 @@
     function exportCSV() {
       const entries = loadLog();
       if (entries.length === 0) { alert("No log entries to export."); return; }
-      const rows = [["Logged Date","Record Date","Start Date","End Date","Media Type","Rating","Review","Rec Type","Title","Reason","History"]];
+      const rows = [["Title","Logged Date","Record Date","Start Date","End Date","Media Type","Rating","Review","Rec Type","Rec Title","Reason","History"]];
       for (const entry of entries) {
+        const title  = getEntryTitle(entry);
         const logged = new Date(entry.date).toLocaleString();
         const recs   = entry.recommendations || [];
-        const base   = [logged, entry.recordDate||"", entry.startDate||"", entry.endDate||"", entry.mediaType||"", entry.rating, entry.review||""];
+        const base   = [title, logged, entry.recordDate||"", entry.startDate||"", entry.endDate||"", entry.mediaType||"", entry.rating, entry.review||""];
         if (recs.length === 0) {
           rows.push([...base, "","","", entry.history.replace(/\n/g," ")]);
         } else {
-          for (const r of recs) {
-            rows.push([...base, r.type, r.title, r.reason, entry.history.replace(/\n/g," ")]);
-          }
+          for (const r of recs) { rows.push([...base, r.type, r.title, r.reason, entry.history.replace(/\n/g," ")]); }
         }
       }
       const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
       const a = Object.assign(document.createElement("a"), {
-        href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })),
-        download: "jdlogs.csv"
+        href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })), download: "jdlogs.csv"
       });
       a.click();
     }
@@ -943,11 +1335,13 @@
       localStorage.removeItem(LOG_KEY);
       collapsedEntries.clear();
       hiddenSuggestions.clear();
+      currentDetailIndex = null;
       renderLog();
     }
 
     // ── Get recommendations ──
     async function getRecommendations() {
+      const title     = document.getElementById("entry-title").value.trim();
       const history   = document.getElementById("history").value.trim();
       const mediaType = document.getElementById("media-type").value;
       const isRange   = RANGE_TYPES.has(mediaType);
@@ -1024,7 +1418,7 @@ Example format:
         }).join("");
 
         const review = document.getElementById("review").value.trim();
-        saveToLog(history, mediaType, recordDate, startDate, endDate, rating, review, recs);
+        saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs);
 
       } catch (err) {
         status.textContent = "";
