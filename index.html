@@ -49,14 +49,76 @@
     body {
       font-family: sans-serif;
       max-width: 620px;
-      margin: 48px auto;
+      margin: 0 auto;
       padding: 0 24px 80px;
       color: var(--text);
       background: var(--bg);
       transition: background 0.2s, color 0.2s;
     }
 
-    h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    /* ── Nav ── */
+    #main-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 0 18px;
+      margin-bottom: 26px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s;
+    }
+    .nav-logo:hover { color: var(--text3); }
+
+    .nav-log-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: auto;
+      padding: 8px 15px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text2);
+      border: 1px solid var(--border2);
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-log-btn:hover { background: var(--surface2); color: var(--text); }
+    .nav-log-btn.active {
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border-color: var(--btn-bg);
+    }
+    .nav-log-btn.active:hover { background: var(--btn-hover); }
+
+    .nav-badge {
+      font-size: 10px;
+      font-weight: 700;
+      background: var(--text4);
+      color: var(--bg);
+      border-radius: 10px;
+      padding: 1px 6px;
+      min-width: 16px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .nav-log-btn.active .nav-badge {
+      background: rgba(255,255,255,0.25);
+      color: var(--btn-fg);
+    }
+    body.dark .nav-log-btn.active .nav-badge {
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* ── Typography ── */
     .subtitle { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
 
     label {
@@ -144,13 +206,13 @@
       font-size: 11px; font-weight: 700; color: #000; letter-spacing: 0.02em; white-space: nowrap;
     }
 
-    /* ── Log section ── */
-    .log-section { margin-top: 48px; border-top: 1px solid var(--border); padding-top: 24px; }
+    /* ── Log view ── */
+    #view-log h2 { font-size: 18px; font-weight: 600; margin: 0; }
 
     .log-header {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 8px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; gap: 8px;
     }
-    .log-header h2 { font-size: 16px; font-weight: 600; margin: 0; }
 
     .log-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .log-actions button { width: auto; padding: 7px 14px; font-size: 12px; border-radius: 6px; }
@@ -295,71 +357,83 @@
 </head>
 <body>
 
-  <h1>jdlogs</h1>
-  <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
+  <!-- ── Persistent nav ── -->
+  <nav id="main-nav">
+    <span class="nav-logo" onclick="showView('home')">jdlogs</span>
+    <button class="nav-log-btn" id="nav-log-btn" onclick="showView('log')">
+      Media Log
+      <span class="nav-badge" id="nav-badge" style="display:none;"></span>
+    </button>
+  </nav>
 
-  <label for="history">Your recent watches, reads, or listens</label>
-  <textarea id="history" rows="6"
-    placeholder="e.g.
+  <!-- ── Home view ── -->
+  <div id="view-home">
+    <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
+
+    <label for="history">Your recent watches, reads, or listens</label>
+    <textarea id="history" rows="6"
+      placeholder="e.g.
 - Watched Inception and loved it
 - Read Dune, really enjoyed the world-building
 - Listened to a lot of Radiohead lately
 - Watched The Bear on Hulu, loved the pacing
 - Played The Last of Us, loved the story"></textarea>
 
-  <div class="form-row">
-    <div>
-      <label for="media-type">Media type</label>
-      <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields()">
-        <option value="">— Select —</option>
-        <option value="Film">Film</option>
-        <option value="Television Series">Television Series</option>
-        <option value="Game">Game</option>
-        <option value="Song">Song</option>
-        <option value="Album">Album</option>
-        <option value="Book">Book</option>
-      </select>
+    <div class="form-row">
+      <div>
+        <label for="media-type">Media type</label>
+        <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields()">
+          <option value="">— Select —</option>
+          <option value="Film">Film</option>
+          <option value="Television Series">Television Series</option>
+          <option value="Game">Game</option>
+          <option value="Song">Song</option>
+          <option value="Album">Album</option>
+          <option value="Book">Book</option>
+        </select>
+      </div>
+      <!-- Single date (non-Book/Game) -->
+      <div id="main-date-single">
+        <label for="record-date">Date of record</label>
+        <input type="date" id="record-date" />
+      </div>
+      <!-- Date range (Book / Game) -->
+      <div id="main-date-start" style="display:none;">
+        <label for="start-date">Start date</label>
+        <input type="date" id="start-date" />
+      </div>
+      <div id="main-date-end" style="display:none;">
+        <label for="end-date">End date</label>
+        <input type="date" id="end-date" />
+      </div>
+      <div>
+        <label for="rating">Enjoyment</label>
+        <select id="rating">
+          <option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="4">4</option>
+          <option value="5" selected>5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option>
+          <option value="9">9</option><option value="10">10</option>
+        </select>
+      </div>
     </div>
-    <!-- Single date (non-Book/Game) -->
-    <div id="main-date-single">
-      <label for="record-date">Date of record</label>
-      <input type="date" id="record-date" />
+
+    <label for="review" style="margin-top:12px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+    <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
+
+    <div class="key-row">
+      <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
     </div>
-    <!-- Date range (Book / Game) -->
-    <div id="main-date-start" style="display:none;">
-      <label for="start-date">Start date</label>
-      <input type="date" id="start-date" />
-    </div>
-    <div id="main-date-end" style="display:none;">
-      <label for="end-date">End date</label>
-      <input type="date" id="end-date" />
-    </div>
-    <div>
-      <label for="rating">Enjoyment</label>
-      <select id="rating">
-        <option value="1">1</option><option value="2">2</option>
-        <option value="3">3</option><option value="4">4</option>
-        <option value="5" selected>5</option><option value="6">6</option>
-        <option value="7">7</option><option value="8">8</option>
-        <option value="9">9</option><option value="10">10</option>
-      </select>
-    </div>
+    <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. It stays in your browser only.</p>
+
+    <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
+
+    <p id="status"></p>
+    <div id="results"></div>
   </div>
 
-  <label for="review" style="margin-top:12px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
-  <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
-
-  <div class="key-row">
-    <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
-  </div>
-  <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. It stays in your browser only.</p>
-
-  <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
-
-  <p id="status"></p>
-  <div id="results"></div>
-
-  <div class="log-section">
+  <!-- ── Log view ── -->
+  <div id="view-log" style="display:none;">
     <div class="log-header">
       <h2>Media Log</h2>
       <div class="log-actions">
@@ -449,10 +523,10 @@
 
     // ── Init ──
     const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("record-date").value      = today;
-    document.getElementById("start-date").value       = today;
-    document.getElementById("end-date").value         = today;
-    document.getElementById("manual-date").value      = today;
+    document.getElementById("record-date").value       = today;
+    document.getElementById("start-date").value        = today;
+    document.getElementById("end-date").value          = today;
+    document.getElementById("manual-date").value       = today;
     document.getElementById("manual-start-date").value = today;
     document.getElementById("manual-end-date").value   = today;
 
@@ -463,6 +537,21 @@
       }
     })();
 
+    // ── View routing ──
+    function showView(v) {
+      document.getElementById("view-home").style.display = v === "home" ? "" : "none";
+      document.getElementById("view-log").style.display  = v === "log"  ? "" : "none";
+      document.getElementById("nav-log-btn").classList.toggle("active", v === "log");
+    }
+
+    // ── Nav badge ──
+    function updateNavBadge() {
+      const count = loadLog().length;
+      const badge = document.getElementById("nav-badge");
+      badge.textContent    = count;
+      badge.style.display  = count > 0 ? "" : "none";
+    }
+
     // ── Dark mode ──
     function toggleDarkMode() {
       const isDark = document.body.classList.toggle("dark");
@@ -470,7 +559,7 @@
       document.getElementById("theme-toggle").textContent = isDark ? "☀ Light mode" : "☾ Dark mode";
     }
 
-    // ── Date field toggle (form) ──
+    // ── Date field toggles ──
     function toggleMainDateFields() {
       const isRange = RANGE_TYPES.has(document.getElementById("media-type").value);
       document.getElementById("main-date-single").style.display = isRange ? "none" : "";
@@ -574,6 +663,8 @@
       const entries    = loadLog();
       const container  = document.getElementById("log");
       const collapseBtn = document.getElementById("collapse-all-btn");
+
+      updateNavBadge();
 
       if (entries.length === 0) {
         container.innerHTML = '<p class="log-empty">No entries yet — get some recommendations to start your log.</p>';
@@ -792,11 +883,11 @@
       form.style.display = visible ? "none" : "block";
       if (!visible) {
         const t = new Date().toISOString().slice(0, 10);
-        document.getElementById("manual-history").value    = "";
-        document.getElementById("manual-rating").value     = "5";
-        document.getElementById("manual-date").value       = t;
-        document.getElementById("manual-start-date").value = t;
-        document.getElementById("manual-end-date").value   = t;
+        document.getElementById("manual-history").value     = "";
+        document.getElementById("manual-rating").value      = "5";
+        document.getElementById("manual-date").value        = t;
+        document.getElementById("manual-start-date").value  = t;
+        document.getElementById("manual-end-date").value    = t;
         document.getElementById("manual-review").value      = "";
         const sel = document.getElementById("manual-type");
         sel.value = "";
