@@ -234,6 +234,23 @@
     .inline-edit input[type="date"]:focus,
     .inline-edit select:focus { outline: none; border-color: var(--text4); }
 
+    .log-review-edit-area {
+      width: 100%; padding: 6px 8px; font-size: 12px; font-family: sans-serif;
+      border: 1px solid var(--border2); border-radius: 6px;
+      background: var(--surface); color: var(--text);
+      resize: vertical; box-sizing: border-box;
+      transition: background 0.2s, color 0.2s;
+    }
+    .log-review-edit-area:focus { outline: none; border-color: var(--text4); }
+
+    .log-entry-review-label {
+      font-size: 10px; font-weight: 700; color: var(--text4);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;
+    }
+    .log-entry-review-text {
+      font-size: 12px; color: var(--text2); line-height: 1.5; white-space: pre-wrap; margin-bottom: 2px;
+    }
+
     .inline-edit .date-range-label {
       font-size: 10px; color: var(--text4); font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.04em;
@@ -329,6 +346,9 @@
     </div>
   </div>
 
+  <label for="review" style="margin-top:12px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+  <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
+
   <div class="key-row">
     <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
   </div>
@@ -391,6 +411,8 @@
           </select>
         </div>
       </div>
+      <label for="manual-review" style="margin-top:10px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+      <textarea id="manual-review" rows="3" placeholder="Write a short review…"></textarea>
       <div class="manual-form-btns">
         <button onclick="addManualEntry()">Save entry</button>
         <button class="btn-form-cancel" onclick="toggleAddForm()">Cancel</button>
@@ -488,9 +510,9 @@
       catch { return []; }
     }
 
-    function saveToLog(history, mediaType, recordDate, startDate, endDate, rating, recs) {
+    function saveToLog(history, mediaType, recordDate, startDate, endDate, rating, review, recs) {
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, startDate, endDate, rating, history, recommendations: recs });
+      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
     }
@@ -627,9 +649,25 @@
               </div>`).join("")}
           </div>`).join("");
 
+        const reviewDisplay = entry.review
+          ? `<div class="log-entry-review-label">Review</div>
+             <div class="log-entry-review-text">${entry.review}</div>
+             <button class="btn-inline muted" onclick="startEditReview(${index})">Edit</button>`
+          : `<button class="btn-inline muted" onclick="startEditReview(${index})">+ Add review</button>`;
+
         const bodyHTML = isCollapsed ? "" : `
           <div class="log-entry-body">
             <div class="log-history">${entry.history}</div>
+            <div style="margin-bottom:10px;">
+              <div id="review-display-${index}">${reviewDisplay}</div>
+              <div id="review-edit-${index}" style="display:none;flex-direction:column;gap:4px;">
+                <textarea id="review-textarea-${index}" class="log-review-edit-area" rows="3">${entry.review || ""}</textarea>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn-isave"  onclick="saveEditReview(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelEditReview(${index})">Cancel</button>
+                </div>
+              </div>
+            </div>
             ${recs.length > 0 ? `
               <div class="sugg-header">
                 <span class="sugg-label">Suggestions</span>
@@ -733,6 +771,20 @@
       document.getElementById(`rating-edit-${index}`).style.display = "none";
     }
 
+    // ── Review edit ──
+    function startEditReview(index) {
+      document.getElementById(`review-display-${index}`).style.display = "none";
+      document.getElementById(`review-edit-${index}`).style.display = "flex";
+      document.getElementById(`review-textarea-${index}`).focus();
+    }
+    function saveEditReview(index) {
+      updateEntry(index, { review: document.getElementById(`review-textarea-${index}`).value.trim() });
+    }
+    function cancelEditReview(index) {
+      document.getElementById(`review-display-${index}`).style.display = "";
+      document.getElementById(`review-edit-${index}`).style.display = "none";
+    }
+
     // ── Manual add ──
     function toggleAddForm() {
       const form    = document.getElementById("manual-form");
@@ -745,6 +797,7 @@
         document.getElementById("manual-date").value       = t;
         document.getElementById("manual-start-date").value = t;
         document.getElementById("manual-end-date").value   = t;
+        document.getElementById("manual-review").value      = "";
         const sel = document.getElementById("manual-type");
         sel.value = "";
         updateSelectColor(sel);
@@ -761,8 +814,9 @@
       const startDate   = isRange ? document.getElementById("manual-start-date").value : null;
       const endDate     = isRange ? document.getElementById("manual-end-date").value   : null;
       const rating      = document.getElementById("manual-rating").value;
+      const review      = document.getElementById("manual-review").value.trim();
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, startDate, endDate, rating, history, recommendations: [], manual: true });
+      entries.unshift({ date: new Date().toISOString(), mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       toggleAddForm();
       renderLog();
@@ -772,11 +826,11 @@
     function exportCSV() {
       const entries = loadLog();
       if (entries.length === 0) { alert("No log entries to export."); return; }
-      const rows = [["Logged Date","Record Date","Start Date","End Date","Media Type","Rating","Rec Type","Title","Reason","History"]];
+      const rows = [["Logged Date","Record Date","Start Date","End Date","Media Type","Rating","Review","Rec Type","Title","Reason","History"]];
       for (const entry of entries) {
         const logged = new Date(entry.date).toLocaleString();
         const recs   = entry.recommendations || [];
-        const base   = [logged, entry.recordDate||"", entry.startDate||"", entry.endDate||"", entry.mediaType||"", entry.rating];
+        const base   = [logged, entry.recordDate||"", entry.startDate||"", entry.endDate||"", entry.mediaType||"", entry.rating, entry.review||""];
         if (recs.length === 0) {
           rows.push([...base, "","","", entry.history.replace(/\n/g," ")]);
         } else {
@@ -878,7 +932,8 @@ Example format:
             </div>`;
         }).join("");
 
-        saveToLog(history, mediaType, recordDate, startDate, endDate, rating, recs);
+        const review = document.getElementById("review").value.trim();
+        saveToLog(history, mediaType, recordDate, startDate, endDate, rating, review, recs);
 
       } catch (err) {
         status.textContent = "";
