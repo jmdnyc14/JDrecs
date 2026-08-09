@@ -483,23 +483,56 @@
     .search-result-item:last-child { border-bottom: none; }
     .search-result-item:hover { background: var(--surface2); }
 
+    .search-result-left {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+      min-width: 0;
+    }
+
     .search-result-title {
       font-size: 13px;
       font-weight: 500;
       color: var(--text);
-      flex: 1;
-      min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .search-result-title mark {
-      background: none;
-      color: var(--text);
-      font-weight: 700;
-      text-decoration: underline;
-      text-decoration-color: var(--text4);
+
+    .search-result-sub {
+      font-size: 11px;
+      color: var(--text4);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
+    .search-row {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-type-select {
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: sans-serif;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+      outline: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .search-type-select:focus { border-color: var(--text3); }
 
     .search-no-results {
       padding: 14px;
@@ -559,11 +592,24 @@
 
   <!-- ── Search bar ── -->
   <div id="search-wrap">
-    <span class="search-icon">⌕</span>
-    <input type="text" id="search-input" class="search-input"
-      placeholder="Search your log…"
-      autocomplete="off" spellcheck="false"
-      oninput="updateSearch()" onfocus="updateSearch()" />
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search-input" class="search-input"
+          placeholder="Search any media…"
+          autocomplete="off" spellcheck="false"
+          oninput="updateSearch()" onfocus="updateSearch()" />
+      </div>
+      <select id="search-type" class="search-type-select" onchange="updateSearch()">
+        <option value="">All</option>
+        <option value="Film">Film</option>
+        <option value="Television Series">TV</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+        <option value="Album">Album</option>
+        <option value="Book">Book</option>
+      </select>
+    </div>
     <div id="search-dropdown" class="search-dropdown" style="display:none;"></div>
   </div>
 
@@ -595,6 +641,7 @@
           <option value="Album">Album</option>
           <option value="Book">Book</option>
         </select>
+
       </div>
       <div id="main-date-single">
         <label for="record-date">Date of record</label>
@@ -624,9 +671,14 @@
     <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
 
     <div class="key-row">
-      <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
+      <input type="password" id="api-key" placeholder="Anthropic API key (sk-ant-…)" />
     </div>
-    <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. It stays in your browser only.</p>
+    <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Stays in your browser only.</p>
+
+    <div class="key-row">
+      <input type="password" id="tmdb-key" placeholder="TMDB API key — enables Film & TV search" oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
+    </div>
+    <p class="key-note">Get a free key at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys. Stays in your browser only.</p>
 
     <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
     <p id="status"></p>
@@ -663,6 +715,7 @@
             <option value="Album">Album</option>
             <option value="Book">Book</option>
           </select>
+
         </div>
         <div id="manual-date-single">
           <label for="manual-date">Date of record</label>
@@ -728,11 +781,12 @@
     const LOG_KEY   = "jdrecs_log";
     const THEME_KEY = "jdlogs_theme";
 
-    let currentDetailIndex  = null;
-    let currentDetailTitle  = null;
-    let currentBackView     = "home";
-    let searchTimer         = null;
-    let _wikiSearchResults  = [];
+    let currentDetailIndex     = null;
+    let currentDetailTitle     = null;
+    let currentDetailMediaType = null;
+    let currentBackView        = "home";
+    let searchTimer            = null;
+    let _wikiSearchResults     = [];
 
     const TYPE_COLORS = {
       "Film":              { bg: "#ffffff", border: "1px solid #bbb" },
@@ -743,11 +797,14 @@
       "Book":              { bg: "#ff8c42", border: "none" },
     };
 
+    const TMDB_KEY_KEY = "jdlogs_tmdb_key";
+    function getTmdbKey() { return localStorage.getItem(TMDB_KEY_KEY) || ""; }
+
     const TYPE_PLURALS = {
       "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
-      "Album": "Albums", "Podcast": "Podcasts", "Video Game": "Video Games"
+      "Album": "Albums", "Video Game": "Video Games"
     };
-    const TYPE_ORDER  = ["Movie", "TV Show", "Book", "Album", "Podcast", "Video Game"];
+    const TYPE_ORDER  = ["Movie", "TV Show", "Book", "Album", "Video Game"];
     const RANGE_TYPES = new Set(["Book", "Game"]);
 
     const collapsedEntries  = new Set();
@@ -755,6 +812,7 @@
 
     // ── Init ──
     const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("tmdb-key").value = getTmdbKey();
     document.getElementById("record-date").value       = today;
     document.getElementById("start-date").value        = today;
     document.getElementById("end-date").value          = today;
@@ -1498,12 +1556,12 @@ ${history}
 The user rated their overall enjoyment of this content: ${rating}/10.
 
 Based on this, recommend exactly 5 things they haven't seen/read/heard yet.
-Mix media types if it fits (movies, shows, books, albums, podcasts, video games).
+Mix media types if it fits (movies, shows, books, albums, video games).
 
 Return ONLY a JSON array with exactly 5 objects. No extra text, no markdown, just raw JSON.
 Each object must have:
 - "title": the name of the work
-- "type": one of "Movie", "TV Show", "Book", "Album", "Podcast", or "Video Game"
+- "type": one of "Movie", "TV Show", "Book", "Album", or "Video Game"
 - "reason": one sentence explaining why they'd love it based on their history
 
 Example format:
@@ -1556,7 +1614,7 @@ Example format:
       }
     }
 
-    // ── Search (Wikipedia-powered) ──
+    // ── Search (type-aware API routing) ──
     function updateSearch() {
       const q        = document.getElementById("search-input").value.trim();
       const dropdown = document.getElementById("search-dropdown");
@@ -1564,38 +1622,100 @@ Example format:
       if (q.length < 2) { dropdown.style.display = "none"; return; }
       dropdown.innerHTML = `<div class="search-loading">Searching…</div>`;
       dropdown.style.display = "";
-      searchTimer = setTimeout(() => doWikiSearch(q), 320);
+      searchTimer = setTimeout(() => runSearch(q), 320);
     }
 
-    async function doWikiSearch(q) {
+    async function runSearch(q) {
       const dropdown = document.getElementById("search-dropdown");
+      const type     = document.getElementById("search-type").value;
       try {
-        const res  = await fetch(
-          `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=7&utf8=1`
-        );
-        const data = await res.json();
-        const results = (data.query?.search || []);
-        if (results.length === 0) {
+        let raw = [];
+        if      (type === "Film")              raw = await searchTMDB(q, "movie");
+        else if (type === "Television Series") raw = await searchTMDB(q, "tv");
+        else if (type === "Book")              raw = await searchOpenLibrary(q);
+        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group");
+        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording");
+        else                                   raw = await searchWikipedia(q);
+
+        if (raw.length === 0) {
           _wikiSearchResults = [];
           dropdown.innerHTML = `<div class="search-no-results">No results for "${q}"</div>`;
-        } else {
-          const entries = loadLog();
-          _wikiSearchResults = results.map(r => {
-            const logIdx = entries.findIndex(e => getEntryTitle(e).toLowerCase() === r.title.toLowerCase());
-            return { title: r.title, logIdx };
-          });
-          dropdown.innerHTML = _wikiSearchResults.map((item, i) => {
-            const badge = item.logIdx !== -1 ? typeTagHTML(entries[item.logIdx].mediaType) : "";
-            return `<div class="search-result-item" onclick="selectSearchResult(${i})">
-              <span class="search-result-title">${item.title}</span>
-              ${badge}
-            </div>`;
-          }).join("");
+          return;
         }
+
+        const entries = loadLog();
+        _wikiSearchResults = raw.map(r => ({
+          title: r.title, subtitle: r.subtitle || "",
+          logIdx: entries.findIndex(e => getEntryTitle(e).toLowerCase() === r.title.toLowerCase()),
+          mediaType: type || null
+        }));
+
+        dropdown.innerHTML = _wikiSearchResults.map((item, i) => {
+          const badge = item.logIdx !== -1
+            ? typeTagHTML(entries[item.logIdx].mediaType)
+            : (type ? typeTagHTML(type) : "");
+          const sub = item.subtitle
+            ? `<span class="search-result-sub">${item.subtitle}</span>` : "";
+          return `<div class="search-result-item" onclick="selectSearchResult(${i})">
+            <div class="search-result-left">
+              <span class="search-result-title">${item.title}</span>
+              ${sub}
+            </div>
+            ${badge}
+          </div>`;
+        }).join("");
       } catch {
         _wikiSearchResults = [];
         dropdown.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
       }
+    }
+
+    async function searchTMDB(q, mediaType) {
+      const key = getTmdbKey();
+      if (!key) return [{ title: "Add your TMDB key on the home page to search Film & TV", subtitle: "" }];
+      const url = mediaType === "movie"
+        ? `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(q)}&api_key=${key}&page=1`
+        : `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(q)}&api_key=${key}&page=1`;
+      const res  = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.results || []).slice(0, 7).map(r => ({
+        title:    r.title || r.name || "",
+        subtitle: (r.release_date || r.first_air_date || "").slice(0, 4)
+      }));
+    }
+
+    async function searchOpenLibrary(q) {
+      const res  = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=7&fields=title,author_name`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.docs || []).slice(0, 7).map(r => ({
+        title:    r.title || "",
+        subtitle: (r.author_name || [])[0] || ""
+      }));
+    }
+
+    async function searchMusicBrainz(q, type) {
+      const url = type === "release-group"
+        ? `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&fmt=json&limit=7`
+        : `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(q)}&fmt=json&limit=7`;
+      const res  = await fetch(url, { headers: { "User-Agent": "jdlogs/1.0 (personal media logger)" } });
+      if (!res.ok) return [];
+      const data = await res.json();
+      const items = type === "release-group" ? (data["release-groups"] || []) : (data.recordings || []);
+      return items.slice(0, 7).map(r => ({
+        title:    r.title || "",
+        subtitle: (r["artist-credit"] || []).map(a => a.artist?.name || "").filter(Boolean).join(", ")
+      }));
+    }
+
+    async function searchWikipedia(q) {
+      const res  = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=7&utf8=1`
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.query?.search || []).map(r => ({ title: r.title, subtitle: "" }));
     }
 
     function selectSearchResult(i) {
@@ -1607,7 +1727,7 @@ Example format:
         currentBackView = "home";
         showView("detail", item.logIdx);
       } else {
-        showDetailForTitle(item.title);
+        showDetailForTitle(item.title, item.mediaType);
       }
     }
 
@@ -1627,10 +1747,11 @@ Example format:
     });
 
     // ── Detail for unlogged media (from search) ──
-    function showDetailForTitle(title) {
-      currentDetailIndex = null;
-      currentDetailTitle = title;
-      currentBackView    = "home";
+    function showDetailForTitle(title, mediaType) {
+      currentDetailIndex     = null;
+      currentDetailTitle     = title;
+      currentDetailMediaType = mediaType || null;
+      currentBackView        = "home";
       ["home", "log", "detail"].forEach(n =>
         document.getElementById(`view-${n}`).style.display = n === "detail" ? "" : "none");
       document.getElementById("nav-log-btn").classList.add("active");
@@ -1645,7 +1766,9 @@ Example format:
         `linear-gradient(135deg, rgba(136,136,136,0.15) 0%, rgba(136,136,136,0.04) 100%)`;
       document.getElementById("detail-poster").innerHTML =
         `<div class="poster-fallback" style="background:linear-gradient(160deg,#888,#444)">${initial}</div>`;
+      const knownType = currentDetailMediaType;
       document.getElementById("detail-meta").innerHTML =
+        (knownType ? typeTagHTML(knownType) : "") +
         `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go"
             target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
       document.getElementById("detail-title").textContent      = title;
@@ -1700,21 +1823,23 @@ Example format:
 
     // ── Log Now ──
     function logNow() {
-      const title = currentDetailTitle ||
+      const title     = currentDetailTitle ||
         (currentDetailIndex !== null ? getEntryTitle(loadLog()[currentDetailIndex]) : "");
+      const mediaType = currentDetailMediaType ||
+        (currentDetailIndex !== null ? loadLog()[currentDetailIndex]?.mediaType : "") || "";
       showView("log");
       const form = document.getElementById("manual-form");
       form.style.display = "block";
       const t = new Date().toISOString().slice(0, 10);
-      document.getElementById("manual-title").value      = title;
-      document.getElementById("manual-history").value    = "";
-      document.getElementById("manual-rating").value     = "5";
-      document.getElementById("manual-review").value     = "";
-      document.getElementById("manual-date").value       = t;
-      document.getElementById("manual-start-date").value = t;
-      document.getElementById("manual-end-date").value   = t;
+      document.getElementById("manual-title").value       = title;
+      document.getElementById("manual-history").value     = "";
+      document.getElementById("manual-rating").value      = "5";
+      document.getElementById("manual-review").value      = "";
+      document.getElementById("manual-date").value        = t;
+      document.getElementById("manual-start-date").value  = t;
+      document.getElementById("manual-end-date").value    = t;
       const sel = document.getElementById("manual-type");
-      sel.value = "";
+      sel.value = mediaType;
       updateSelectColor(sel);
       toggleManualDateFields();
       form.scrollIntoView({ behavior: "smooth" });
