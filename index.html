@@ -1224,9 +1224,9 @@
       catch { return []; }
     }
 
-    function saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, status) {
+    function saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, status, thumbnailUrl) {
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs, status: status || "" });
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs, status: status || "", thumbnailUrl: thumbnailUrl !== undefined ? thumbnailUrl : undefined });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
     }
@@ -1325,8 +1325,8 @@
         const posterAccent = rawAccentP === "#ffffff" ? "#9aa0a8" : rawAccentP;
         const posterInitial = displayTitle.charAt(0).toUpperCase();
         const posterHTML = entry.thumbnailUrl
-          ? `<div class="entry-poster"><img src="${entry.thumbnailUrl}" alt=""></div>`
-          : `<div class="entry-poster"><div class="entry-poster-fallback" style="background:linear-gradient(160deg,${posterAccent},${darkenHex(posterAccent,0.52)})">${posterInitial}</div></div>`;
+          ? `<div class="entry-poster" id="ep-${index}"><img src="${entry.thumbnailUrl}" alt=""></div>`
+          : `<div class="entry-poster" id="ep-${index}"><div class="entry-poster-fallback" style="background:linear-gradient(160deg,${posterAccent},${darkenHex(posterAccent,0.52)})">${posterInitial}</div></div>`;
 
         const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
           year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
@@ -1460,6 +1460,14 @@
       indexed.forEach(({ index }) => {
         const sel = document.getElementById(`type-select-${index}`);
         if (sel && sel.parentElement.style.display !== "none") updateSelectColor(sel);
+      });
+
+      // Backfill artwork for entries that haven't been fetched yet
+      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      indexed.forEach(({ entry, index }) => {
+        if (ARTWORK_TYPES.has(entry.mediaType) && entry.thumbnailUrl === undefined) {
+          kickArtworkFetch(entry.date, index, entry);
+        }
       });
     }
 
@@ -1832,11 +1840,19 @@
       const rating      = document.getElementById("manual-rating").value;
       const review      = document.getElementById("manual-review").value.trim();
       const status      = document.getElementById("manual-status").value;
+      const entryDate = new Date().toISOString();
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true, status: status || "" });
+      entries.unshift({ date: entryDate, title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true, status: status || "" });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       toggleAddForm();
       renderLog();
+      // Fire-and-forget artwork for supported types
+      const ARTWORK_TYPES_M = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      if (title && ARTWORK_TYPES_M.has(mediaType)) {
+        fetchMediaArtwork(title, "", mediaType).then(url => {
+          if (url) patchEntryArtwork(entryDate, url);
+        });
+      }
     }
 
     // ── Export ──
@@ -1944,6 +1960,12 @@ Each object must have:
 Example format:
 [{"title":"...","type":"Film","reason":"..."},...]`;
 
+      // Fetch artwork in parallel with AI call (for types that have cover art)
+      const ARTWORK_TYPES_SET = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const artworkPromise = (title && ARTWORK_TYPES_SET.has(mediaType))
+        ? fetchMediaArtwork(title, (document.getElementById("entry-artist")?.value || "").trim(), mediaType)
+        : Promise.resolve(undefined);
+
       try {
         const response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -1981,7 +2003,8 @@ Example format:
         }).join("");
 
         const review = document.getElementById("review").value.trim();
-        saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, entryStatus);
+        const artworkUrl = await artworkPromise;
+        saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, entryStatus, artworkUrl);
 
       } catch (err) {
         status.textContent = "";
@@ -2093,6 +2116,70 @@ Example format:
         title:    r.title || "",
         subtitle: (r.author_name || [])[0] || ""
       }));
+    }
+
+    // ── Cover art / poster artwork ──
+    const _artworkInFlight = new Set();
+
+    async function fetchMediaArtwork(title, artist, mediaType) {
+      try {
+        if (mediaType === "Song" || mediaType === "Album") {
+          const entity = mediaType === "Song" ? "song" : "album";
+          const query  = artist ? `${title} ${artist}` : title;
+          const res    = await fetch(
+            `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=${entity}&limit=5&media=music`
+          );
+          if (!res.ok) return null;
+          const data = await res.json();
+          const item = data.results?.[0];
+          return item?.artworkUrl100?.replace("100x100bb", "600x600bb") || null;
+        }
+        if (mediaType === "Film" || mediaType === "Television Series") {
+          const key = getTmdbKey();
+          if (!key) return null;
+          const type = mediaType === "Film" ? "movie" : "tv";
+          const res  = await fetch(
+            `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(title)}&limit=1`
+          );
+          if (!res.ok) return null;
+          const data = await res.json();
+          const path = data.results?.[0]?.poster_path;
+          return path ? `https://image.tmdb.org/t/p/w500${path}` : null;
+        }
+        if (mediaType === "Book") {
+          const res  = await fetch(
+            `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}&limit=5&fields=cover_i,title`
+          );
+          if (!res.ok) return null;
+          const data = await res.json();
+          const item = data.docs?.find(d => d.cover_i);
+          return item?.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null;
+        }
+        return null;
+      } catch { return null; }
+    }
+
+    function patchEntryArtwork(dateKey, url) {
+      const entries = loadLog();
+      const idx = entries.findIndex(e => e.date === dateKey);
+      if (idx === -1) return;
+      entries[idx].thumbnailUrl = url; // null = "tried, no art"; string = success
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      if (url) {
+        const el = document.getElementById(`ep-${idx}`);
+        if (el) el.innerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+      }
+    }
+
+    function kickArtworkFetch(dateKey, index, entry) {
+      if (_artworkInFlight.has(dateKey)) return;
+      _artworkInFlight.add(dateKey);
+      const title  = getEntryTitle(entry);
+      const artist = entry.artist || "";
+      fetchMediaArtwork(title, artist, entry.mediaType).then(url => {
+        _artworkInFlight.delete(dateKey);
+        patchEntryArtwork(dateKey, url !== null ? url : null);
+      }).catch(() => _artworkInFlight.delete(dateKey));
     }
 
     async function searchMusicBrainz(q, type, artist) {
