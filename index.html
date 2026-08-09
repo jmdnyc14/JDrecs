@@ -728,10 +728,11 @@
     const LOG_KEY   = "jdrecs_log";
     const THEME_KEY = "jdlogs_theme";
 
-    let currentDetailIndex = null;
-    let currentDetailTitle = null;
-    let currentBackView    = "home";
-    let searchTimer        = null;
+    let currentDetailIndex  = null;
+    let currentDetailTitle  = null;
+    let currentBackView     = "home";
+    let searchTimer         = null;
+    let _wikiSearchResults  = [];
 
     const TYPE_COLORS = {
       "Film":              { bg: "#ffffff", border: "1px solid #bbb" },
@@ -1176,7 +1177,7 @@
       document.getElementById("detail-edit-title-btn").style.display = "";
       document.getElementById("detail-title-edit").style.display = "none";
       document.getElementById("detail-log-now-wrap").innerHTML =
-        `<button class="log-now-btn" onclick="logNow(${JSON.stringify(title)})">+ Log Now</button>`;
+        `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>`;
 
       // Description
       const descEl = document.getElementById("detail-description");
@@ -1575,31 +1576,38 @@ Example format:
         const data = await res.json();
         const results = (data.query?.search || []);
         if (results.length === 0) {
+          _wikiSearchResults = [];
           dropdown.innerHTML = `<div class="search-no-results">No results for "${q}"</div>`;
         } else {
           const entries = loadLog();
-          dropdown.innerHTML = results.map(r => {
+          _wikiSearchResults = results.map(r => {
             const logIdx = entries.findIndex(e => getEntryTitle(e).toLowerCase() === r.title.toLowerCase());
-            const badge  = logIdx !== -1 ? typeTagHTML(entries[logIdx].mediaType) : "";
-            return `<div class="search-result-item" onclick="selectSearchResult(${JSON.stringify(r.title)}, ${logIdx})">
-              <span class="search-result-title">${r.title}</span>
+            return { title: r.title, logIdx };
+          });
+          dropdown.innerHTML = _wikiSearchResults.map((item, i) => {
+            const badge = item.logIdx !== -1 ? typeTagHTML(entries[item.logIdx].mediaType) : "";
+            return `<div class="search-result-item" onclick="selectSearchResult(${i})">
+              <span class="search-result-title">${item.title}</span>
               ${badge}
             </div>`;
           }).join("");
         }
       } catch {
+        _wikiSearchResults = [];
         dropdown.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
       }
     }
 
-    function selectSearchResult(title, logIdx) {
+    function selectSearchResult(i) {
+      const item = _wikiSearchResults[i];
+      if (!item) return;
       document.getElementById("search-input").value = "";
       document.getElementById("search-dropdown").style.display = "none";
-      if (logIdx !== -1) {
+      if (item.logIdx !== -1) {
         currentBackView = "home";
-        showView("detail", logIdx);
+        showView("detail", item.logIdx);
       } else {
-        showDetailForTitle(title);
+        showDetailForTitle(item.title);
       }
     }
 
@@ -1645,7 +1653,7 @@ Example format:
       document.getElementById("detail-edit-title-btn").style.display = "none";
       document.getElementById("detail-title-edit").style.display     = "none";
       document.getElementById("detail-log-now-wrap").innerHTML =
-        `<button class="log-now-btn" onclick="logNow(${JSON.stringify(title)})">+ Log Now</button>`;
+        `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>`;
 
       const descEl = document.getElementById("detail-description");
       descEl.textContent = "Fetching description…";
@@ -1691,7 +1699,9 @@ Example format:
     }
 
     // ── Log Now ──
-    function logNow(title) {
+    function logNow() {
+      const title = currentDetailTitle ||
+        (currentDetailIndex !== null ? getEntryTitle(loadLog()[currentDetailIndex]) : "");
       showView("log");
       const form = document.getElementById("manual-form");
       form.style.display = "block";
