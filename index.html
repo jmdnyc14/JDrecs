@@ -693,7 +693,13 @@
     <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
 
     <label for="entry-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
-    <input type="text" id="entry-title" class="title-input" placeholder="e.g. Inception, Hollow Knight, Dune" />
+    <div style="position:relative;margin-bottom:14px;">
+      <input type="text" id="entry-title" class="title-input" style="margin-bottom:0;"
+        placeholder="e.g. Inception, Hollow Knight, Dune"
+        autocomplete="off" spellcheck="false"
+        oninput="updateTitleSearch()" onfocus="updateTitleSearch()" />
+      <div id="title-dropdown" class="search-dropdown" style="display:none;"></div>
+    </div>
 
     <label for="history">Context for recommendations</label>
     <textarea id="history" rows="5"
@@ -707,7 +713,7 @@
     <div class="form-row">
       <div>
         <label for="media-type">Media type</label>
-        <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields()">
+        <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields(); updateTitleSearch()">
           <option value="">— Select —</option>
           <option value="Film">Film</option>
           <option value="Television Series">Television Series</option>
@@ -1824,6 +1830,11 @@ Example format:
       if (!wrap.contains(e.target)) {
         document.getElementById("search-dropdown").style.display = "none";
       }
+      const titleInput = document.getElementById("entry-title");
+      const titleDrop  = document.getElementById("title-dropdown");
+      if (titleInput && !titleInput.parentElement.contains(e.target)) {
+        titleDrop.style.display = "none";
+      }
     });
 
     document.getElementById("search-input").addEventListener("keydown", function(e) {
@@ -1935,6 +1946,60 @@ Example format:
 
     function goBackFromDetail() {
       showView(currentBackView || "log");
+    }
+
+    // ── Title field autocomplete ──
+    let titleSearchTimer   = null;
+    let _titleSearchResults = [];
+
+    function updateTitleSearch() {
+      const q = (document.getElementById("entry-title")?.value || "").trim();
+      clearTimeout(titleSearchTimer);
+      const drop = document.getElementById("title-dropdown");
+      if (!drop) return;
+      if (q.length < 2) { drop.style.display = "none"; return; }
+      drop.innerHTML = `<div class="search-loading">Searching…</div>`;
+      drop.style.display = "";
+      titleSearchTimer = setTimeout(() => runTitleSearch(q), 320);
+    }
+
+    async function runTitleSearch(q) {
+      const drop = document.getElementById("title-dropdown");
+      const type = document.getElementById("media-type").value;
+      try {
+        let raw = [];
+        if      (type === "Film")              raw = await searchTMDB(q, "movie");
+        else if (type === "Television Series") raw = await searchTMDB(q, "tv");
+        else if (type === "Book")              raw = await searchOpenLibrary(q);
+        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group");
+        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording");
+        else                                   raw = await searchWikipedia(q);
+
+        _titleSearchResults = raw;
+        if (raw.length === 0) {
+          drop.innerHTML = `<div class="search-no-results">No results</div>`;
+          return;
+        }
+        drop.innerHTML = raw.map((r, i) => {
+          const sub = r.subtitle ? `<span class="search-result-sub">${r.subtitle}</span>` : "";
+          return `<div class="search-result-item" onclick="selectTitleResult(${i})">
+            <div class="search-result-left">
+              <span class="search-result-title">${r.title}</span>
+              ${sub}
+            </div>
+          </div>`;
+        }).join("");
+      } catch {
+        _titleSearchResults = [];
+        drop.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
+      }
+    }
+
+    function selectTitleResult(i) {
+      const item = _titleSearchResults[i];
+      if (!item) return;
+      document.getElementById("entry-title").value = item.title;
+      document.getElementById("title-dropdown").style.display = "none";
     }
 
     // ── Settings ──
