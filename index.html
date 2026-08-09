@@ -749,6 +749,143 @@
       letter-spacing: 0.06em;
       margin-bottom: 5px;
     }
+
+    /* ── Log search + view toggles ── */
+    .log-search-bar { margin-bottom: 10px; }
+    .log-search-bar input {
+      width: 100%; box-sizing: border-box;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none;
+    }
+    .log-search-bar input:focus { border-color: var(--border2); }
+    .log-view-toggles { display: flex; gap: 5px; margin-bottom: 10px; }
+    .view-tog {
+      padding: 5px 11px; border-radius: 7px; font-size: 12px; font-weight: 600;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text3);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .view-tog.active { background: rgba(245,132,38,0.15); border-color: rgba(245,132,38,0.35); color: var(--accent); }
+    .view-tog:hover:not(.active) { color: var(--text); }
+    .tag-filter-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+
+    /* ── Shelf / grid view ── */
+    .shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+    .shelf-cell {
+      background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; overflow: hidden; cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .shelf-cell:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.22); }
+    .shelf-cell-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+    .shelf-cell-fallback {
+      width: 100%; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 800; color: rgba(255,255,255,0.55);
+    }
+    .shelf-cell-info { padding: 6px 7px 8px; }
+    .shelf-cell-title { font-size: 11px; font-weight: 600; color: var(--text2); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shelf-cell-sub { font-size: 10px; color: var(--text4); margin-top: 2px; }
+
+    /* ── Diary / timeline view ── */
+    .diary-month-block { margin-bottom: 22px; }
+    .diary-month-label {
+      font-size: 10px; font-weight: 700; color: var(--text4); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 8px; padding-bottom: 5px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .diary-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.12s;
+    }
+    .diary-row:hover { background: rgba(255,255,255,0.04); }
+    .diary-row-date { font-size: 11px; color: var(--text4); min-width: 40px; font-variant-numeric: tabular-nums; }
+    .diary-row-title { font-size: 13px; color: var(--text); font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .diary-row-rating { font-size: 11px; color: var(--text3); min-width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ── Tags ── */
+    .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag-pill {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 100px;
+      background: rgba(245,132,38,0.12); border: 1px solid rgba(245,132,38,0.28); color: var(--accent);
+    }
+    .tag-remove-btn { cursor: pointer; color: rgba(245,132,38,0.55); font-size: 10px; line-height: 1; padding: 0 1px; }
+    .tag-remove-btn:hover { color: var(--accent); }
+    .tag-input-row { display: flex; gap: 6px; margin-top: 7px; }
+    .tag-text-input {
+      font-size: 12px; padding: 4px 9px; border-radius: 6px;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      outline: none; flex: 1; min-width: 0;
+    }
+    .tag-text-input:focus { border-color: var(--border2); }
+    .tag-filter-chip {
+      display: inline-flex; align-items: center; gap: 3px; font-size: 11px;
+      padding: 3px 10px; border-radius: 100px; cursor: pointer; white-space: nowrap;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text3);
+      transition: all 0.15s;
+    }
+    .tag-filter-chip.on { background: rgba(245,132,38,0.14); border-color: rgba(245,132,38,0.38); color: var(--accent); }
+
+    /* ── Backlog ── */
+    .backlog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .backlog-header h2 { margin: 0; }
+    .backlog-add-form {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; margin-bottom: 18px; display: none; flex-direction: column; gap: 10px;
+    }
+    .backlog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+    .backlog-card {
+      background: var(--surface); border: 1px solid var(--glass-border); border-radius: 10px;
+      overflow: hidden; transition: transform 0.15s, border-color 0.15s;
+    }
+    .backlog-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.22); }
+    .backlog-card-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; cursor: pointer; }
+    .backlog-card-fallback {
+      width: 100%; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center;
+      font-size: 30px; font-weight: 800; color: rgba(255,255,255,0.5); cursor: pointer;
+    }
+    .backlog-card-body { padding: 7px 8px 9px; }
+    .backlog-card-title { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .backlog-card-type { font-size: 10px; color: var(--text4); margin-top: 2px; }
+    .backlog-card-actions { display: flex; gap: 4px; margin-top: 7px; }
+    .backlog-card-actions button { flex: 1; font-size: 10px; padding: 4px 0; border-radius: 5px; cursor: pointer; }
+    .btn-log-it { background: rgba(245,132,38,0.14); border: 1px solid rgba(245,132,38,0.32); color: var(--accent); }
+    .btn-log-it:hover { background: rgba(245,132,38,0.25); }
+    .btn-backlog-del { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text4); }
+    .btn-backlog-del:hover { color: var(--text); }
+    .backlog-empty { font-size: 13px; color: var(--text4); text-align: center; padding: 48px 0; }
+
+    /* ── Lists ── */
+    .lists-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .lists-header h2 { margin: 0; }
+    .list-card {
+      background: var(--surface); border: 1px solid var(--glass-border); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 10px; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .list-card:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.09); }
+    .list-card-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .list-card-meta { font-size: 12px; color: var(--text4); margin-top: 2px; }
+    .list-previews { display: flex; gap: 5px; margin-top: 10px; }
+    .list-preview-img { width: 36px; height: 54px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+    .list-preview-fb {
+      width: 36px; height: 54px; border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.45);
+    }
+    .lists-empty { font-size: 13px; color: var(--text4); text-align: center; padding: 48px 0; }
+    .list-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .list-detail-title { font-size: 20px; font-weight: 800; flex: 1; min-width: 0; }
+    .list-detail-count { font-size: 12px; color: var(--text4); }
+    .list-add-picker {
+      position: absolute; right: 0; top: calc(100% + 6px); z-index: 200;
+      background: #141828; border: 1px solid var(--border2); border-radius: 10px;
+      min-width: 200px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden;
+    }
+    .list-add-picker-item {
+      padding: 9px 14px; font-size: 13px; color: var(--text2); cursor: pointer; transition: background 0.12s;
+    }
+    .list-add-picker-item:hover { background: rgba(255,255,255,0.06); }
+    .list-add-picker-empty { padding: 9px 14px; font-size: 13px; color: var(--text4); }
   </style>
 </head>
 <body>
@@ -760,11 +897,16 @@
   <!-- ── Persistent nav ── -->
   <nav id="main-nav">
     <span class="nav-logo" onclick="showView('home')"><span class="logo-accent">jd</span>logs</span>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
       <button class="nav-log-btn" id="nav-stats-btn" onclick="showView('stats')">Stats</button>
+      <button class="nav-log-btn" id="nav-lists-btn" onclick="showView('lists')">Lists</button>
+      <button class="nav-log-btn" id="nav-backlog-btn" onclick="showView('backlog')">
+        Backlog
+        <span class="nav-badge" id="backlog-badge" style="display:none;"></span>
+      </button>
       <button class="nav-log-btn" id="nav-log-btn" onclick="showView('log')">
-        Media Log
+        Log
         <span class="nav-badge" id="nav-badge" style="display:none;"></span>
       </button>
     </div>
@@ -987,7 +1129,17 @@
       </div>
     </div>
 
-    <div class="log-filters">
+    <div class="log-search-bar">
+      <input type="text" id="log-search-input" placeholder="Search your log…"
+        oninput="currentLogSearch=this.value.toLowerCase();renderLog()" autocomplete="off" />
+    </div>
+    <div class="log-view-toggles">
+      <button class="view-tog active" id="vtog-list" onclick="setLogView('list')">List</button>
+      <button class="view-tog" id="vtog-grid" onclick="setLogView('grid')">Shelf</button>
+      <button class="view-tog" id="vtog-diary" onclick="setLogView('diary')">Diary</button>
+    </div>
+    <div class="tag-filter-row" id="tag-filter-row"></div>
+    <div class="log-filters" id="log-filters-row">
       <select id="filter-type" onchange="currentFilterType=this.value;renderLog()">
         <option value="">All Types</option>
         <option value="Film">Film</option>
@@ -1045,9 +1197,60 @@
     <div id="stats-content"></div>
   </div>
 
+  <!-- ── Backlog view ── -->
+  <div id="view-backlog" style="display:none;">
+    <div class="backlog-header">
+      <h2>Backlog</h2>
+      <button class="btn-add" onclick="toggleBacklogForm()">+ Add</button>
+    </div>
+    <div class="backlog-add-form" id="backlog-add-form">
+      <input type="text" id="backlog-title-input" class="title-input"
+        placeholder="Title…" style="margin-bottom:0;" autocomplete="off" />
+      <select id="backlog-type-select" style="width:100%;box-sizing:border-box;">
+        <option value="">— Media type —</option>
+        <option value="Film">Film</option>
+        <option value="Television Series">Television Series</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+        <option value="Album">Album</option>
+        <option value="Book">Book</option>
+      </select>
+      <textarea id="backlog-notes-input" rows="2" placeholder="Notes (optional)…"></textarea>
+      <div style="display:flex;gap:6px;">
+        <button onclick="addBacklogEntry()">Add to Backlog</button>
+        <button class="btn-form-cancel" onclick="toggleBacklogForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="backlog-grid" id="backlog-grid"></div>
+  </div>
+
+  <!-- ── Lists view ── -->
+  <div id="view-lists" style="display:none;">
+    <!-- List index -->
+    <div id="lists-index">
+      <div class="lists-header">
+        <h2>Lists</h2>
+        <button class="btn-add" onclick="createNewList()">+ New List</button>
+      </div>
+      <div id="lists-container"></div>
+    </div>
+    <!-- List detail (shown in place of index) -->
+    <div id="list-detail" style="display:none;">
+      <div class="list-detail-header">
+        <button class="detail-back-btn" style="position:static;margin:0;" onclick="showListsIndex()">← Back</button>
+        <div class="list-detail-title" id="list-detail-title"></div>
+        <span class="list-detail-count" id="list-detail-count"></span>
+        <button class="btn-inline danger" onclick="deleteCurrentList()">Delete list</button>
+      </div>
+      <div class="shelf-grid" id="list-detail-grid"></div>
+    </div>
+  </div>
+
   <script>
-    const LOG_KEY   = "jdrecs_log";
-    const THEME_KEY = "jdlogs_theme";
+    const LOG_KEY     = "jdrecs_log";
+    const BACKLOG_KEY = "jdrecs_backlog";
+    const LISTS_KEY   = "jdrecs_lists";
+    const THEME_KEY   = "jdlogs_theme";
 
     let currentDetailIndex     = null;
     let currentDetailTitle     = null;
@@ -1055,6 +1258,11 @@
     let currentBackView        = "home";
     let searchTimer            = null;
     let _wikiSearchResults     = [];
+
+    let currentLogView    = "list";  // "list" | "grid" | "diary"
+    let currentLogSearch  = "";
+    let currentTagFilter  = "";
+    let currentListId     = null;
 
     const TYPE_COLORS = {
       "Film":              { bg: "#9aa0a8", border: "none" },
@@ -1102,12 +1310,16 @@
 
     // ── View routing ──
     function showView(v, idx) {
-      ["home", "log", "detail", "stats"].forEach(name => {
+      ["home", "log", "detail", "stats", "backlog", "lists"].forEach(name => {
         document.getElementById(`view-${name}`).style.display = name === v ? "" : "none";
       });
       document.getElementById("nav-log-btn").classList.toggle("active", v === "log" || v === "detail");
       document.getElementById("nav-stats-btn").classList.toggle("active", v === "stats");
-      if (v === "stats") renderStats();
+      document.getElementById("nav-backlog-btn").classList.toggle("active", v === "backlog");
+      document.getElementById("nav-lists-btn").classList.toggle("active", v === "lists");
+      if (v === "stats")   renderStats();
+      if (v === "backlog") renderBacklog();
+      if (v === "lists")   renderListsIndex();
       if (v === "detail" && idx !== undefined) {
         currentDetailIndex = idx;
         currentDetailTitle = null;
@@ -1122,6 +1334,22 @@
       const badge = document.getElementById("nav-badge");
       badge.textContent   = count;
       badge.style.display = count > 0 ? "" : "none";
+      const bcount = loadBacklog().length;
+      const bbadge = document.getElementById("backlog-badge");
+      bbadge.textContent   = bcount;
+      bbadge.style.display = bcount > 0 ? "" : "none";
+    }
+
+    // ── Log view toggle ──
+    function setLogView(v) {
+      currentLogView = v;
+      ["list","grid","diary"].forEach(n => {
+        const el = document.getElementById(`vtog-${n}`);
+        if (el) el.classList.toggle("active", n === v);
+      });
+      const filtersRow = document.getElementById("log-filters-row");
+      if (filtersRow) filtersRow.style.display = v === "diary" ? "none" : "";
+      renderLog();
     }
 
     // ── Dark mode ──
@@ -1307,6 +1535,7 @@
       const collapseBtn = document.getElementById("collapse-all-btn");
 
       updateNavBadge();
+      renderTagFilterRow(allEntries);
 
       if (allEntries.length === 0) {
         container.innerHTML = '<p class="log-empty">No entries yet — get some recommendations to start your log.</p>';
@@ -1315,14 +1544,16 @@
       }
 
       if (collapseBtn) {
-        collapseBtn.style.display = "";
+        collapseBtn.style.display = currentLogView === "list" ? "" : "none";
         collapseBtn.textContent = allEntries.every(e => collapsedEntries.has(e.date)) ? "Expand all" : "Collapse all";
       }
 
-      // Apply filter then sort, preserving original indices
+      // Apply filter + search + tag then sort, preserving original indices
       let indexed = allEntries.map((entry, index) => ({ entry, index }));
       if (currentFilterType)   indexed = indexed.filter(({ entry }) => entry.mediaType === currentFilterType);
       if (currentFilterStatus) indexed = indexed.filter(({ entry }) => (entry.status || "") === currentFilterStatus);
+      if (currentLogSearch)    indexed = indexed.filter(({ entry }) => getEntryTitle(entry).toLowerCase().includes(currentLogSearch));
+      if (currentTagFilter)    indexed = indexed.filter(({ entry }) => (entry.tags || []).includes(currentTagFilter));
       indexed.sort((a, b) => {
         switch (currentSortBy) {
           case "date-asc":    return new Date(a.entry.date) - new Date(b.entry.date);
@@ -1337,6 +1568,9 @@
         container.innerHTML = '<p class="log-empty">No entries match the current filters.</p>';
         return;
       }
+
+      if (currentLogView === "grid") { renderShelf(indexed); return; }
+      if (currentLogView === "diary") { renderDiary(indexed); return; }
 
       container.innerHTML = indexed.map(({ entry, index }) => {
         const isCollapsed  = collapsedEntries.has(entry.date);
@@ -1414,6 +1648,9 @@
              <button class="btn-inline muted" onclick="startEditReview(${index})">Edit</button>`
           : `<button class="btn-inline muted" onclick="startEditReview(${index})">+ Add review</button>`;
 
+        const entryTags = entry.tags || [];
+        const tagsHTML = entryTags.length > 0 ? `<div class="tag-list" style="margin-top:6px;">${entryTags.map(t => `<span class="tag-pill">${t}</span>`).join("")}</div>` : "";
+
         const bodyHTML = isCollapsed ? "" : `
           <div class="log-entry-body">
             <div class="log-history">${entry.history}</div>
@@ -1462,6 +1699,7 @@
                   </span>
                 </div>
                 ${isCollapsed ? `<span class="log-entry-logged">Logged: ${loggedDate}</span>` : datesHTML}
+                ${tagsHTML}
               </div>
               <div class="log-entry-right">
                 <div class="log-entry-rating-wrap" id="rating-display-${index}">
@@ -1759,6 +1997,33 @@
               <div id="det-dates-edit" style="display:none;">${datesEditHTML}</div>
             </div>
             <button class="btn-inline muted" onclick="startDetField('det-dates-display','det-dates-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div style="flex:1;min-width:0;">
+              <div class="detail-field-label">Tags</div>
+              <div id="det-tags-display">
+                ${renderTagsDisplay(entry.tags || [], index)}
+              </div>
+              <div class="tag-input-row" style="margin-top:7px;">
+                <input type="text" class="tag-text-input" id="det-tag-input" placeholder="Add tag…"
+                  onkeydown="if(event.key==='Enter'){addTagFromDetail(${index});}" />
+                <button class="btn-isave" onclick="addTagFromDetail(${index})">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header" style="flex-direction:column;align-items:flex-start;gap:6px;">
+            <div class="detail-field-label">Lists</div>
+            <div id="det-lists-display" style="position:relative;">
+              ${renderEntryListBadges(entry.date)}
+              <button class="btn-inline muted" onclick="toggleListPicker(${JSON.stringify(entry.date)})">+ Add to list</button>
+              <div id="list-picker-drop" class="list-add-picker" style="display:none;"></div>
+            </div>
           </div>
         </div>
 
@@ -2353,8 +2618,13 @@ Example format:
       document.getElementById("detail-title").style.display    = "";
       document.getElementById("detail-edit-title-btn").style.display = "none";
       document.getElementById("detail-title-edit").style.display     = "none";
+      const isInBacklog = loadBacklog().some(b => b.title.toLowerCase() === title.toLowerCase());
       document.getElementById("detail-log-now-wrap").innerHTML =
-        `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>`;
+        `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>
+         <button class="log-now-btn" style="background:rgba(255,255,255,0.07);color:var(--text2);margin-left:6px;"
+           onclick="addTitleToBacklog(${JSON.stringify(title)}, ${JSON.stringify(currentDetailMediaType || '')})">
+           ${isInBacklog ? "✓ In Backlog" : "+ Backlog"}
+         </button>`;
 
       const descEl = document.getElementById("detail-description");
       descEl.textContent = "Fetching description…";
@@ -2551,6 +2821,405 @@ Example format:
         const data = await res.json();
         return data.content?.[0]?.text?.trim() || null;
       } catch { return null; }
+    }
+
+    // ── Shelf (grid) view ──
+    function renderShelf(indexed) {
+      const container = document.getElementById("log");
+      container.innerHTML = `<div class="shelf-grid">${indexed.map(({ entry, index }) => {
+        const title   = getEntryTitle(entry);
+        const initial = title.charAt(0).toUpperCase();
+        const rawAccent = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+        const accent  = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
+        const poster  = entry.thumbnailUrl
+          ? `<img class="shelf-cell-poster" src="${entry.thumbnailUrl}" alt="">`
+          : `<div class="shelf-cell-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
+        return `<div class="shelf-cell" onclick="showView('detail', ${index})">
+          ${poster}
+          <div class="shelf-cell-info">
+            <div class="shelf-cell-title">${title}</div>
+            <div class="shelf-cell-sub">${entry.rating ? entry.rating + "/10" : (entry.mediaType || "")}</div>
+          </div>
+        </div>`;
+      }).join("")}</div>`;
+      // backfill artwork
+      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      indexed.forEach(({ entry, index }) => {
+        if (ARTWORK_TYPES.has(entry.mediaType) && entry.thumbnailUrl === undefined) kickArtworkFetch(entry.date, index, entry);
+      });
+    }
+
+    // ── Diary view ──
+    function renderDiary(indexed) {
+      const container = document.getElementById("log");
+      // Group by month of recordDate (or startDate/date as fallback)
+      const months = {};
+      for (const { entry, index } of indexed) {
+        const raw = entry.recordDate || entry.startDate || entry.date;
+        const d   = new Date(raw.length === 10 ? raw + "T12:00:00" : raw);
+        const key = d.toLocaleDateString("en-US", { year: "numeric", month: "long" });
+        if (!months[key]) months[key] = [];
+        months[key].push({ entry, index, d });
+      }
+      // Sort months descending
+      const sortedKeys = Object.keys(months).sort((a, b) => new Date(b) - new Date(a));
+      container.innerHTML = sortedKeys.map(month => {
+        const rows = months[month].sort((a, b) => b.d - a.d).map(({ entry, index, d }) => {
+          const title  = getEntryTitle(entry);
+          const day    = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          return `<div class="diary-row" onclick="showView('detail', ${index})">
+            ${typeTagHTML(entry.mediaType)}
+            <span class="diary-row-date">${day}</span>
+            <span class="diary-row-title">${title}</span>
+            <span class="diary-row-rating">${entry.rating ? entry.rating + "/10" : ""}</span>
+          </div>`;
+        }).join("");
+        return `<div class="diary-month-block">
+          <div class="diary-month-label">${month}</div>
+          ${rows}
+        </div>`;
+      }).join("");
+    }
+
+    // ── Tag filter row ──
+    function renderTagFilterRow(entries) {
+      const row = document.getElementById("tag-filter-row");
+      if (!row) return;
+      const allTags = [...new Set(entries.flatMap(e => e.tags || []))].sort();
+      if (allTags.length === 0) { row.innerHTML = ""; return; }
+      row.innerHTML = allTags.map(t =>
+        `<span class="tag-filter-chip${currentTagFilter === t ? " on" : ""}" onclick="toggleTagFilter(${JSON.stringify(t)})">${t}</span>`
+      ).join("");
+    }
+
+    function toggleTagFilter(tag) {
+      currentTagFilter = currentTagFilter === tag ? "" : tag;
+      renderLog();
+    }
+
+    // ── Tag helpers for detail view ──
+    function renderTagsDisplay(tags, index) {
+      if (!tags.length) return `<span style="font-size:12px;color:var(--text4);font-style:italic;">No tags yet</span>`;
+      return `<div class="tag-list">${tags.map((t, i) =>
+        `<span class="tag-pill">${t}<span class="tag-remove-btn" onclick="removeTagFromDetail(${index}, ${i})">✕</span></span>`
+      ).join("")}</div>`;
+    }
+
+    function addTagFromDetail(index) {
+      const input = document.getElementById("det-tag-input");
+      if (!input) return;
+      const tag = input.value.trim().toLowerCase().replace(/\s+/g, "-");
+      if (!tag) return;
+      const entries = loadLog();
+      if (!entries[index]) return;
+      const tags = entries[index].tags || [];
+      if (!tags.includes(tag)) {
+        updateEntry(index, { tags: [...tags, tag] });
+      }
+      input.value = "";
+    }
+
+    function removeTagFromDetail(index, tagIdx) {
+      const entries = loadLog();
+      if (!entries[index]) return;
+      const tags = [...(entries[index].tags || [])];
+      tags.splice(tagIdx, 1);
+      updateEntry(index, { tags });
+    }
+
+    // ── List helpers for detail view ──
+    function renderEntryListBadges(entryDate) {
+      const lists = loadLists().filter(l => l.items.includes(entryDate));
+      if (!lists.length) return "";
+      return lists.map(l =>
+        `<span class="tag-pill" style="margin-right:4px;cursor:pointer;" onclick="showListDetail(${JSON.stringify(l.id)})">${l.name}
+          <span class="tag-remove-btn" onclick="event.stopPropagation();removeEntryFromList(${JSON.stringify(l.id)}, ${JSON.stringify(entryDate)})">✕</span>
+        </span>`
+      ).join("");
+    }
+
+    function toggleListPicker(entryDate) {
+      const drop = document.getElementById("list-picker-drop");
+      if (!drop) return;
+      if (drop.style.display !== "none") { drop.style.display = "none"; return; }
+      const lists = loadLists();
+      if (!lists.length) {
+        drop.innerHTML = `<div class="list-add-picker-empty">No lists yet — create one in Lists.</div>`;
+      } else {
+        drop.innerHTML = lists.map(l => {
+          const inList = l.items.includes(entryDate);
+          return `<div class="list-add-picker-item" onclick="toggleEntryInList(${JSON.stringify(l.id)}, ${JSON.stringify(entryDate)})">
+            ${inList ? "✓ " : ""}${l.name}
+          </div>`;
+        }).join("");
+      }
+      drop.style.display = "";
+    }
+
+    function toggleEntryInList(listId, entryDate) {
+      const lists = loadLists();
+      const list  = lists.find(l => l.id === listId);
+      if (!list) return;
+      if (list.items.includes(entryDate)) {
+        list.items = list.items.filter(d => d !== entryDate);
+      } else {
+        list.items.push(entryDate);
+      }
+      saveLists(lists);
+      // refresh detail log card
+      if (currentDetailIndex !== null) {
+        const entries = loadLog();
+        const entry   = entries[currentDetailIndex];
+        if (entry) renderDetailLog(entry, currentDetailIndex, RANGE_TYPES.has(entry.mediaType));
+      }
+    }
+
+    function removeEntryFromList(listId, entryDate) {
+      const lists = loadLists();
+      const list  = lists.find(l => l.id === listId);
+      if (!list) return;
+      list.items = list.items.filter(d => d !== entryDate);
+      saveLists(lists);
+      if (currentDetailIndex !== null) {
+        const entries = loadLog();
+        const entry   = entries[currentDetailIndex];
+        if (entry) renderDetailLog(entry, currentDetailIndex, RANGE_TYPES.has(entry.mediaType));
+      }
+    }
+
+    // ── Backlog storage ──
+    function loadBacklog() {
+      try { return JSON.parse(localStorage.getItem(BACKLOG_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveBacklogData(items) {
+      localStorage.setItem(BACKLOG_KEY, JSON.stringify(items));
+      updateNavBadge();
+    }
+
+    // ── Backlog UI ──
+    function toggleBacklogForm() {
+      const form = document.getElementById("backlog-add-form");
+      const open = form.style.display !== "none" && form.style.display !== "";
+      form.style.display = open ? "none" : "flex";
+      if (!open) {
+        document.getElementById("backlog-title-input").value = "";
+        document.getElementById("backlog-type-select").value = "";
+        document.getElementById("backlog-notes-input").value = "";
+        document.getElementById("backlog-title-input").focus();
+      }
+    }
+
+    function addBacklogEntry() {
+      const title = document.getElementById("backlog-title-input").value.trim();
+      if (!title) { alert("Enter a title."); return; }
+      const mediaType = document.getElementById("backlog-type-select").value;
+      const notes     = document.getElementById("backlog-notes-input").value.trim();
+      const entryDate = new Date().toISOString();
+      const items = loadBacklog();
+      items.unshift({ date: entryDate, title, mediaType, notes });
+      saveBacklogData(items);
+      toggleBacklogForm();
+      renderBacklog();
+      // fetch cover art in background
+      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      if (ARTWORK_TYPES_B.has(mediaType)) {
+        fetchMediaArtwork(title, "", mediaType).then(url => {
+          if (url) patchBacklogArtwork(entryDate, url);
+        });
+      }
+    }
+
+    function patchBacklogArtwork(dateKey, url) {
+      const items = loadBacklog();
+      const idx   = items.findIndex(b => b.date === dateKey);
+      if (idx === -1) return;
+      items[idx].thumbnailUrl = url;
+      saveBacklogData(items);
+      const el = document.getElementById(`bp-${idx}`);
+      if (el) el.innerHTML = `<img class="backlog-card-poster" src="${url}" alt="" onclick="addTitleToBacklogDetail(${JSON.stringify(items[idx].title)})">`;
+    }
+
+    function addTitleToBacklog(title, mediaType) {
+      const items = loadBacklog();
+      if (items.some(b => b.title.toLowerCase() === title.toLowerCase())) {
+        alert("Already in your backlog."); return;
+      }
+      const entryDate = new Date().toISOString();
+      items.unshift({ date: entryDate, title, mediaType: mediaType || "", notes: "" });
+      saveBacklogData(items);
+      // refresh button
+      const wrap = document.getElementById("detail-log-now-wrap");
+      if (wrap) {
+        const btns = wrap.querySelectorAll("button");
+        if (btns[1]) btns[1].textContent = "✓ In Backlog";
+      }
+      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      if (ARTWORK_TYPES_B.has(mediaType)) {
+        fetchMediaArtwork(title, "", mediaType).then(url => { if (url) patchBacklogArtwork(entryDate, url); });
+      }
+    }
+
+    function removeBacklogEntry(dateKey) {
+      if (!confirm("Remove from backlog?")) return;
+      const items = loadBacklog().filter(b => b.date !== dateKey);
+      saveBacklogData(items);
+      renderBacklog();
+    }
+
+    function moveBacklogToLog(dateKey) {
+      const items = loadBacklog();
+      const item  = items.find(b => b.date === dateKey);
+      if (!item) return;
+      showView("log");
+      const form = document.getElementById("manual-form");
+      form.style.display = "block";
+      const t = new Date().toISOString().slice(0, 10);
+      document.getElementById("manual-title").value      = item.title;
+      document.getElementById("manual-history").value    = item.notes || "";
+      document.getElementById("manual-rating").value     = "5";
+      document.getElementById("manual-review").value     = "";
+      document.getElementById("manual-date").value       = t;
+      document.getElementById("manual-start-date").value = t;
+      document.getElementById("manual-end-date").value   = t;
+      const sel = document.getElementById("manual-type");
+      sel.value = item.mediaType || "";
+      updateSelectColor(sel);
+      toggleManualDateFields();
+      // remove from backlog after moving
+      saveBacklogData(items.filter(b => b.date !== dateKey));
+      form.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function renderBacklog() {
+      const items = loadBacklog();
+      const grid  = document.getElementById("backlog-grid");
+      if (!grid) return;
+      updateNavBadge();
+      if (items.length === 0) {
+        grid.innerHTML = '<p class="backlog-empty">Your backlog is empty — add things you want to watch, read, or play.</p>';
+        return;
+      }
+      grid.innerHTML = items.map((item, idx) => {
+        const initial   = (item.title || "?").charAt(0).toUpperCase();
+        const rawAccent = (TYPE_COLORS[item.mediaType] || { bg: "#888888" }).bg;
+        const accent    = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
+        const poster = item.thumbnailUrl
+          ? `<img class="backlog-card-poster" id="bp-${idx}" src="${item.thumbnailUrl}" alt="" onclick="showDetailForTitle(${JSON.stringify(item.title)}, ${JSON.stringify(item.mediaType)})">`
+          : `<div class="backlog-card-fallback" id="bp-${idx}" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})" onclick="showDetailForTitle(${JSON.stringify(item.title)}, ${JSON.stringify(item.mediaType)})">${initial}</div>`;
+        return `<div class="backlog-card">
+          ${poster}
+          <div class="backlog-card-body">
+            <div class="backlog-card-title">${item.title}</div>
+            <div class="backlog-card-type">${item.mediaType || "—"}</div>
+            <div class="backlog-card-actions">
+              <button class="btn-log-it" onclick="moveBacklogToLog(${JSON.stringify(item.date)})">Log it</button>
+              <button class="btn-backlog-del" onclick="removeBacklogEntry(${JSON.stringify(item.date)})">✕</button>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    // ── Lists storage ──
+    function loadLists() {
+      try { return JSON.parse(localStorage.getItem(LISTS_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveLists(lists) { localStorage.setItem(LISTS_KEY, JSON.stringify(lists)); }
+
+    function createNewList() {
+      const name = prompt("List name:");
+      if (!name || !name.trim()) return;
+      const lists = loadLists();
+      lists.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name.trim(), created: new Date().toISOString(), items: [] });
+      saveLists(lists);
+      renderListsIndex();
+    }
+
+    function deleteCurrentList() {
+      if (!currentListId || !confirm("Delete this list?")) return;
+      saveLists(loadLists().filter(l => l.id !== currentListId));
+      showListsIndex();
+    }
+
+    function showListsIndex() {
+      currentListId = null;
+      document.getElementById("lists-index").style.display = "";
+      document.getElementById("list-detail").style.display = "none";
+      renderListsIndex();
+    }
+
+    function renderListsIndex() {
+      document.getElementById("lists-index").style.display = "";
+      document.getElementById("list-detail").style.display = "none";
+      const lists = loadLists();
+      const cont  = document.getElementById("lists-container");
+      if (!cont) return;
+      if (lists.length === 0) {
+        cont.innerHTML = '<p class="lists-empty">No lists yet — create one to curate your favourites.</p>';
+        return;
+      }
+      const logEntries = loadLog();
+      cont.innerHTML = lists.map(list => {
+        const count    = list.items.length;
+        const previews = list.items.slice(0, 6).map(dateKey => {
+          const entry = logEntries.find(e => e.date === dateKey);
+          if (!entry) return "";
+          const title   = getEntryTitle(entry);
+          const initial = title.charAt(0).toUpperCase();
+          const rawAcc  = (TYPE_COLORS[entry.mediaType] || { bg: "#888" }).bg;
+          const acc     = rawAcc === "#ffffff" ? "#9aa0a8" : rawAcc;
+          return entry.thumbnailUrl
+            ? `<img class="list-preview-img" src="${entry.thumbnailUrl}" alt="">`
+            : `<div class="list-preview-fb" style="background:linear-gradient(160deg,${acc},${darkenHex(acc,0.52)})">${initial}</div>`;
+        }).join("");
+        return `<div class="list-card" onclick="showListDetail(${JSON.stringify(list.id)})">
+          <div class="list-card-name">${list.name}</div>
+          <div class="list-card-meta">${count} item${count !== 1 ? "s" : ""}</div>
+          ${previews ? `<div class="list-previews">${previews}</div>` : ""}
+        </div>`;
+      }).join("");
+    }
+
+    function showListDetail(listId) {
+      currentListId = listId;
+      const list    = loadLists().find(l => l.id === listId);
+      if (!list) { showListsIndex(); return; }
+      document.getElementById("lists-index").style.display  = "none";
+      document.getElementById("list-detail").style.display  = "";
+      document.getElementById("list-detail-title").textContent = list.name;
+      document.getElementById("list-detail-count").textContent = `${list.items.length} item${list.items.length !== 1 ? "s" : ""}`;
+      const logEntries = loadLog();
+      const grid = document.getElementById("list-detail-grid");
+      if (!list.items.length) {
+        grid.innerHTML = '<p style="font-size:13px;color:var(--text4);grid-column:1/-1;">No items in this list — add entries from their detail pages.</p>';
+        return;
+      }
+      grid.innerHTML = list.items.map(dateKey => {
+        const entry = logEntries.find(e => e.date === dateKey);
+        if (!entry) return "";
+        const idx     = logEntries.findIndex(e => e.date === dateKey);
+        const title   = getEntryTitle(entry);
+        const initial = title.charAt(0).toUpperCase();
+        const rawAcc  = (TYPE_COLORS[entry.mediaType] || { bg: "#888" }).bg;
+        const acc     = rawAcc === "#ffffff" ? "#9aa0a8" : rawAcc;
+        const poster  = entry.thumbnailUrl
+          ? `<img class="shelf-cell-poster" src="${entry.thumbnailUrl}" alt="">`
+          : `<div class="shelf-cell-fallback" style="background:linear-gradient(160deg,${acc},${darkenHex(acc,0.52)})">${initial}</div>`;
+        return `<div class="shelf-cell" onclick="showView('detail', ${idx})">
+          ${poster}
+          <div class="shelf-cell-info">
+            <div class="shelf-cell-title">${title}</div>
+            <div class="shelf-cell-sub">${entry.rating ? entry.rating + "/10" : (entry.mediaType || "")}</div>
+          </div>
+        </div>`;
+      }).join("");
+      // make sure the lists view is showing
+      ["home","log","detail","stats","backlog"].forEach(n =>
+        document.getElementById(`view-${n}`).style.display = "none");
+      document.getElementById("view-lists").style.display = "";
+      document.getElementById("nav-lists-btn").classList.add("active");
     }
 
     // ── Stats page ──
