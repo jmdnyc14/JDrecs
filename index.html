@@ -577,6 +577,52 @@
       transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
     .theme-toggle:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── Settings ── */
+    .settings-btn {
+      background: none; border: none; width: auto;
+      padding: 6px 8px; font-size: 17px; color: var(--text4);
+      cursor: pointer; border-radius: 7px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .settings-btn:hover { color: var(--text2); background: var(--surface2); }
+
+    .settings-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 500; display: flex; align-items: flex-start;
+      justify-content: center; padding: 72px 16px 0;
+    }
+
+    .settings-panel {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 14px; padding: 22px 24px; width: 100%; max-width: 440px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+    }
+
+    .settings-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .settings-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .settings-close {
+      background: none; border: none; width: auto; padding: 4px 8px;
+      font-size: 16px; color: var(--text4); cursor: pointer; border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .settings-close:hover { color: var(--text); background: var(--surface2); }
+
+    .settings-field { margin-bottom: 16px; }
+    .settings-field label { margin-bottom: 6px; }
+    .settings-field .key-row { margin: 6px 0 4px; }
+    .settings-field .key-note { margin: 0; }
+
+    /* ── Search section labels ── */
+    .search-section-label {
+      padding: 5px 14px 4px;
+      font-size: 10px; font-weight: 700; color: var(--text5);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -584,11 +630,40 @@
   <!-- ── Persistent nav ── -->
   <nav id="main-nav">
     <span class="nav-logo" onclick="showView('home')">jdlogs</span>
-    <button class="nav-log-btn" id="nav-log-btn" onclick="showView('log')">
-      Media Log
-      <span class="nav-badge" id="nav-badge" style="display:none;"></span>
-    </button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+      <button class="nav-log-btn" id="nav-log-btn" onclick="showView('log')">
+        Media Log
+        <span class="nav-badge" id="nav-badge" style="display:none;"></span>
+      </button>
+    </div>
   </nav>
+
+  <!-- ── Settings modal ── -->
+  <div id="settings-overlay" style="display:none;" onclick="closeSettingsOutside(event)">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <span class="settings-title">Settings</span>
+        <button class="settings-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="settings-field">
+        <label for="settings-anthropic-key">Anthropic API key</label>
+        <div class="key-row">
+          <input type="password" id="settings-anthropic-key" placeholder="sk-ant-…"
+            oninput="localStorage.setItem('jdlogs_anthropic_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</p>
+      </div>
+      <div class="settings-field">
+        <label for="settings-tmdb-key">TMDB API key <span style="font-weight:400;color:var(--text4);">(Film &amp; TV search)</span></label>
+        <div class="key-row">
+          <input type="password" id="settings-tmdb-key" placeholder="b68a…"
+            oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get one at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys</p>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Search bar ── -->
   <div id="search-wrap">
@@ -669,16 +744,6 @@
 
     <label for="review" style="margin-top:12px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
     <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
-
-    <div class="key-row">
-      <input type="password" id="api-key" placeholder="Anthropic API key (sk-ant-…)" />
-    </div>
-    <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Stays in your browser only.</p>
-
-    <div class="key-row">
-      <input type="password" id="tmdb-key" placeholder="TMDB API key — enables Film & TV search" oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
-    </div>
-    <p class="key-note">Get a free key at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys. Stays in your browser only.</p>
 
     <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
     <p id="status"></p>
@@ -797,8 +862,10 @@
       "Book":              { bg: "#ff8c42", border: "none" },
     };
 
-    const TMDB_KEY_KEY = "jdlogs_tmdb_key";
-    function getTmdbKey() { return localStorage.getItem(TMDB_KEY_KEY) || ""; }
+    const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
+    const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
+    function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
+    function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
 
     const TYPE_PLURALS = {
       "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
@@ -812,7 +879,6 @@
 
     // ── Init ──
     const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("tmdb-key").value = getTmdbKey();
     document.getElementById("record-date").value       = today;
     document.getElementById("start-date").value        = today;
     document.getElementById("end-date").value          = today;
@@ -1535,13 +1601,13 @@
       const startDate  = isRange ? document.getElementById("start-date").value : null;
       const endDate    = isRange ? document.getElementById("end-date").value   : null;
       const rating     = document.getElementById("rating").value;
-      const apiKey     = document.getElementById("api-key").value.trim();
+      const apiKey     = getAnthropicKey();
       const btn        = document.getElementById("go-btn");
       const status     = document.getElementById("status");
       const results    = document.getElementById("results");
 
       if (!history) { status.textContent = "Please describe some things you've watched, read, or listened to."; return; }
-      if (!apiKey || !apiKey.startsWith("sk-")) { status.textContent = "Please paste your API key above (starts with sk-ant-...)."; return; }
+      if (!apiKey || !apiKey.startsWith("sk-")) { status.textContent = "Add your Anthropic API key in ⚙ Settings first."; return; }
 
       btn.disabled = true;
       status.textContent = "Thinking...";
@@ -1628,46 +1694,68 @@ Example format:
     async function runSearch(q) {
       const dropdown = document.getElementById("search-dropdown");
       const type     = document.getElementById("search-type").value;
+      const ql       = q.toLowerCase();
       try {
-        let raw = [];
-        if      (type === "Film")              raw = await searchTMDB(q, "movie");
-        else if (type === "Television Series") raw = await searchTMDB(q, "tv");
-        else if (type === "Book")              raw = await searchOpenLibrary(q);
-        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group");
-        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording");
-        else                                   raw = await searchWikipedia(q);
+        // Log matches first
+        const entries    = loadLog();
+        const logMatches = entries
+          .map((e, i) => ({ title: getEntryTitle(e), subtitle: "", mediaType: e.mediaType, logIdx: i, fromLog: true }))
+          .filter(m => m.title.toLowerCase().includes(ql) && (!type || m.mediaType === type));
 
-        if (raw.length === 0) {
+        // API results
+        let apiRaw = [];
+        if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
+        else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
+        else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
+        else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group");
+        else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording");
+        else                                   apiRaw = await searchWikipedia(q);
+
+        // Dedup API results vs log
+        const logTitles  = new Set(logMatches.map(m => m.title.toLowerCase()));
+        const apiResults = apiRaw
+          .filter(r => !logTitles.has(r.title.toLowerCase()))
+          .map(r => ({ title: r.title, subtitle: r.subtitle || "", mediaType: type || null, logIdx: -1, fromLog: false }));
+
+        if (logMatches.length === 0 && apiResults.length === 0) {
           _wikiSearchResults = [];
           dropdown.innerHTML = `<div class="search-no-results">No results for "${q}"</div>`;
           return;
         }
 
-        const entries = loadLog();
-        _wikiSearchResults = raw.map(r => ({
-          title: r.title, subtitle: r.subtitle || "",
-          logIdx: entries.findIndex(e => getEntryTitle(e).toLowerCase() === r.title.toLowerCase()),
-          mediaType: type || null
-        }));
+        _wikiSearchResults = [...logMatches, ...apiResults];
 
-        dropdown.innerHTML = _wikiSearchResults.map((item, i) => {
-          const badge = item.logIdx !== -1
-            ? typeTagHTML(entries[item.logIdx].mediaType)
-            : (type ? typeTagHTML(type) : "");
-          const sub = item.subtitle
-            ? `<span class="search-result-sub">${item.subtitle}</span>` : "";
-          return `<div class="search-result-item" onclick="selectSearchResult(${i})">
-            <div class="search-result-left">
-              <span class="search-result-title">${item.title}</span>
-              ${sub}
-            </div>
-            ${badge}
-          </div>`;
-        }).join("");
+        let html = "";
+        if (logMatches.length > 0) {
+          html += `<div class="search-section-label">Your log</div>`;
+          html += logMatches.map((_, i) => renderDropdownItem(i)).join("");
+        }
+        if (apiResults.length > 0) {
+          const label = type || "Online";
+          html += `<div class="search-section-label">${label}</div>`;
+          html += apiResults.map((_, i) => renderDropdownItem(logMatches.length + i)).join("");
+        }
+        dropdown.innerHTML = html;
       } catch {
         _wikiSearchResults = [];
         dropdown.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
       }
+    }
+
+    function renderDropdownItem(i) {
+      const item    = _wikiSearchResults[i];
+      const entries = loadLog();
+      const badge   = item.logIdx !== -1
+        ? typeTagHTML(entries[item.logIdx].mediaType)
+        : (item.mediaType ? typeTagHTML(item.mediaType) : "");
+      const sub = item.subtitle ? `<span class="search-result-sub">${item.subtitle}</span>` : "";
+      return `<div class="search-result-item" onclick="selectSearchResult(${i})">
+        <div class="search-result-left">
+          <span class="search-result-title">${item.title}</span>
+          ${sub}
+        </div>
+        ${badge}
+      </div>`;
     }
 
     async function searchTMDB(q, mediaType) {
@@ -1847,6 +1935,19 @@ Example format:
 
     function goBackFromDetail() {
       showView(currentBackView || "log");
+    }
+
+    // ── Settings ──
+    function openSettings() {
+      document.getElementById("settings-anthropic-key").value = getAnthropicKey();
+      document.getElementById("settings-tmdb-key").value      = getTmdbKey();
+      document.getElementById("settings-overlay").style.display = "flex";
+    }
+    function closeSettings() {
+      document.getElementById("settings-overlay").style.display = "none";
+    }
+    function closeSettingsOutside(e) {
+      if (e.target === document.getElementById("settings-overlay")) closeSettings();
     }
 
     renderLog();
