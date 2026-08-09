@@ -623,6 +623,83 @@
       text-transform: uppercase; letter-spacing: 0.07em;
       background: var(--surface2); border-bottom: 1px solid var(--border);
     }
+
+    /* ── Entry poster (log list) ── */
+    .entry-poster {
+      width: 44px; height: 66px; border-radius: 5px; overflow: hidden;
+      flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.18); align-self: flex-start;
+    }
+    .entry-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .entry-poster-fallback {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: rgba(255,255,255,0.92);
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-block; padding: 2px 7px; border-radius: 10px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #fff; white-space: nowrap;
+    }
+    .status-completed   { background: #4ecb71; }
+    .status-in-progress { background: #4fa3f7; }
+    .status-not-started { background: #aaaaaa; }
+    .status-dropped     { background: #ff6b6b; }
+
+    /* ── Log filters ── */
+    .log-filters {
+      display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .log-filters select {
+      font-size: 12px; padding: 5px 8px; border-radius: 6px;
+      border: 1px solid var(--border2); background: var(--surface); color: var(--text);
+      cursor: pointer; font-family: sans-serif;
+      transition: background 0.2s, color 0.2s;
+    }
+    .log-filters select:focus { outline: none; border-color: var(--text4); }
+    body.dark .log-filters select { color-scheme: dark; }
+
+    /* ── AI blurb card ── */
+    .ai-blurb-card {
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; background: var(--surface); margin-bottom: 14px;
+    }
+    .ai-blurb-header {
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      font-size: 10px; font-weight: 700; color: var(--text4);
+      text-transform: uppercase; letter-spacing: 0.08em; background: var(--surface2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ai-blurb-btn {
+      width: auto; padding: 4px 10px; font-size: 11px; border-radius: 6px;
+      background: var(--btn-bg); color: var(--btn-fg); border: none;
+      font-weight: 500; letter-spacing: 0; text-transform: none;
+    }
+    .ai-blurb-btn:hover { background: var(--btn-hover); }
+    .ai-blurb-btn:disabled { background: var(--text4); cursor: not-allowed; }
+
+    /* ── Stats page ── */
+    #view-stats h2 { font-size: 18px; font-weight: 600; margin: 0 0 20px; }
+    .stats-summary-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px;
+    }
+    .stats-summary-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .stats-summary-label { font-size: 10px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .stats-summary-value { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .stats-summary-sub   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .stats-section-title { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin: 0 0 10px; }
+    .stats-section { margin-bottom: 24px; }
+    .stats-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .stats-bar-label { font-size: 12px; color: var(--text2); min-width: 130px; flex-shrink: 0; }
+    .stats-bar-track { flex: 1; height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; }
+    .stats-bar-fill  { height: 100%; border-radius: 5px; }
+    .stats-bar-count { font-size: 12px; color: var(--text3); min-width: 28px; text-align: right; }
+    .stats-empty { font-size: 13px; color: var(--text4); text-align: center; padding: 24px 0; }
   </style>
 </head>
 <body>
@@ -632,6 +709,7 @@
     <span class="nav-logo" onclick="showView('home')">jdlogs</span>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+      <button class="nav-log-btn" id="nav-stats-btn" onclick="showView('stats')">Stats</button>
       <button class="nav-log-btn" id="nav-log-btn" onclick="showView('log')">
         Media Log
         <span class="nav-badge" id="nav-badge" style="display:none;"></span>
@@ -724,6 +802,16 @@
         </select>
 
       </div>
+      <div>
+        <label for="entry-status">Status</label>
+        <select id="entry-status">
+          <option value="completed" selected>Completed</option>
+          <option value="in-progress">In Progress</option>
+          <option value="not-started">Not Started</option>
+          <option value="dropped">Dropped</option>
+          <option value="">— None —</option>
+        </select>
+      </div>
       <div id="main-date-single">
         <label for="record-date">Date of record</label>
         <input type="date" id="record-date" />
@@ -788,6 +876,16 @@
           </select>
 
         </div>
+        <div>
+          <label for="manual-status">Status</label>
+          <select id="manual-status">
+            <option value="completed" selected>Completed</option>
+            <option value="in-progress">In Progress</option>
+            <option value="not-started">Not Started</option>
+            <option value="dropped">Dropped</option>
+            <option value="">— None —</option>
+          </select>
+        </div>
         <div id="manual-date-single">
           <label for="manual-date">Date of record</label>
           <input type="date" id="manual-date" />
@@ -819,6 +917,31 @@
       </div>
     </div>
 
+    <div class="log-filters">
+      <select id="filter-type" onchange="currentFilterType=this.value;renderLog()">
+        <option value="">All Types</option>
+        <option value="Film">Film</option>
+        <option value="Television Series">Television Series</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+        <option value="Album">Album</option>
+        <option value="Book">Book</option>
+      </select>
+      <select id="filter-status" onchange="currentFilterStatus=this.value;renderLog()">
+        <option value="">All Statuses</option>
+        <option value="completed">Completed</option>
+        <option value="in-progress">In Progress</option>
+        <option value="not-started">Not Started</option>
+        <option value="dropped">Dropped</option>
+      </select>
+      <select id="sort-by" onchange="currentSortBy=this.value;renderLog()">
+        <option value="date-desc">Newest</option>
+        <option value="date-asc">Oldest</option>
+        <option value="rating-desc">Rating ↓</option>
+        <option value="rating-asc">Rating ↑</option>
+        <option value="type">Type</option>
+      </select>
+    </div>
     <div id="log"></div>
   </div>
 
@@ -844,6 +967,12 @@
 
     <div class="detail-log-card" id="detail-log-card"></div>
     <div id="detail-sugg-card"></div>
+  </div>
+
+  <!-- ── Stats view ── -->
+  <div id="view-stats" style="display:none;">
+    <h2>Stats</h2>
+    <div id="stats-content"></div>
   </div>
 
   <button class="theme-toggle" id="theme-toggle" onclick="toggleDarkMode()">☾ Dark mode</button>
@@ -883,6 +1012,10 @@
     const collapsedEntries  = new Set();
     const hiddenSuggestions = new Set();
 
+    let currentSortBy      = "date-desc";
+    let currentFilterType  = "";
+    let currentFilterStatus = "";
+
     // ── Init ──
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById("record-date").value       = today;
@@ -901,10 +1034,12 @@
 
     // ── View routing ──
     function showView(v, idx) {
-      ["home", "log", "detail"].forEach(name => {
+      ["home", "log", "detail", "stats"].forEach(name => {
         document.getElementById(`view-${name}`).style.display = name === v ? "" : "none";
       });
-      document.getElementById("nav-log-btn").classList.toggle("active", v !== "home");
+      document.getElementById("nav-log-btn").classList.toggle("active", v === "log" || v === "detail");
+      document.getElementById("nav-stats-btn").classList.toggle("active", v === "stats");
+      if (v === "stats") renderStats();
       if (v === "detail" && idx !== undefined) {
         currentDetailIndex = idx;
         currentDetailTitle = null;
@@ -962,6 +1097,14 @@
       return `<span class="type-tag" style="background:${cfg.bg};${border}">${type}</span>`;
     }
 
+    function statusBadgeHTML(status) {
+      if (!status) return "";
+      const labels = { "completed": "Completed", "in-progress": "In Progress", "not-started": "Not Started", "dropped": "Dropped" };
+      const label = labels[status];
+      if (!label) return "";
+      return `<span class="status-badge status-${status}">${label}</span>`;
+    }
+
     // ── Helpers ──
     function formatDate(iso) {
       if (!iso) return "—";
@@ -1009,9 +1152,9 @@
       catch { return []; }
     }
 
-    function saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs) {
+    function saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, status) {
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs });
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs, status: status || "" });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       renderLog();
     }
@@ -1060,13 +1203,13 @@
 
     // ── Render log list ──
     function renderLog() {
-      const entries    = loadLog();
-      const container  = document.getElementById("log");
+      const allEntries  = loadLog();
+      const container   = document.getElementById("log");
       const collapseBtn = document.getElementById("collapse-all-btn");
 
       updateNavBadge();
 
-      if (entries.length === 0) {
+      if (allEntries.length === 0) {
         container.innerHTML = '<p class="log-empty">No entries yet — get some recommendations to start your log.</p>';
         if (collapseBtn) collapseBtn.style.display = "none";
         return;
@@ -1074,10 +1217,29 @@
 
       if (collapseBtn) {
         collapseBtn.style.display = "";
-        collapseBtn.textContent = entries.every(e => collapsedEntries.has(e.date)) ? "Expand all" : "Collapse all";
+        collapseBtn.textContent = allEntries.every(e => collapsedEntries.has(e.date)) ? "Expand all" : "Collapse all";
       }
 
-      container.innerHTML = entries.map((entry, index) => {
+      // Apply filter then sort, preserving original indices
+      let indexed = allEntries.map((entry, index) => ({ entry, index }));
+      if (currentFilterType)   indexed = indexed.filter(({ entry }) => entry.mediaType === currentFilterType);
+      if (currentFilterStatus) indexed = indexed.filter(({ entry }) => (entry.status || "") === currentFilterStatus);
+      indexed.sort((a, b) => {
+        switch (currentSortBy) {
+          case "date-asc":    return new Date(a.entry.date) - new Date(b.entry.date);
+          case "rating-desc": return (parseInt(b.entry.rating) || 0) - (parseInt(a.entry.rating) || 0);
+          case "rating-asc":  return (parseInt(a.entry.rating) || 0) - (parseInt(b.entry.rating) || 0);
+          case "type":        return (a.entry.mediaType || "").localeCompare(b.entry.mediaType || "");
+          default:            return new Date(b.entry.date) - new Date(a.entry.date);
+        }
+      });
+
+      if (indexed.length === 0) {
+        container.innerHTML = '<p class="log-empty">No entries match the current filters.</p>';
+        return;
+      }
+
+      container.innerHTML = indexed.map(({ entry, index }) => {
         const isCollapsed  = collapsedEntries.has(entry.date);
         const isSuggHidden = hiddenSuggestions.has(entry.date);
         const recs         = entry.recommendations || [];
@@ -1085,6 +1247,14 @@
         const isRange      = RANGE_TYPES.has(entry.mediaType);
         const nowIso       = new Date().toISOString().slice(0, 10);
         const displayTitle = getEntryTitle(entry);
+
+        // Poster
+        const rawAccentP = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+        const posterAccent = rawAccentP === "#ffffff" ? "#9aa0a8" : rawAccentP;
+        const posterInitial = displayTitle.charAt(0).toUpperCase();
+        const posterHTML = entry.thumbnailUrl
+          ? `<div class="entry-poster"><img src="${entry.thumbnailUrl}" alt=""></div>`
+          : `<div class="entry-poster"><div class="entry-poster-fallback" style="background:linear-gradient(160deg,${posterAccent},${darkenHex(posterAccent,0.52)})">${posterInitial}</div></div>`;
 
         const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
           year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
@@ -1172,10 +1342,12 @@
         return `
           <div class="log-entry" id="entry-${index}">
             <div class="log-entry-meta">
+              ${posterHTML}
               <div class="log-entry-left">
                 <div class="log-entry-top">
                   <button class="btn-chevron" onclick="toggleEntry('${dateKey}')">${isCollapsed ? "▸" : "▾"}</button>
                   ${typeTagHTML(entry.mediaType)}
+                  ${statusBadgeHTML(entry.status || "")}
                   <button class="entry-title-btn" onclick="showView('detail', ${index})">${displayTitle}</button>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1213,7 +1385,7 @@
           </div>`;
       }).join("");
 
-      entries.forEach((_, index) => {
+      indexed.forEach(({ index }) => {
         const sel = document.getElementById(`type-select-${index}`);
         if (sel && sel.parentElement.style.display !== "none") updateSelectColor(sel);
       });
@@ -1393,8 +1565,35 @@
         year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
       });
 
+      const statusOptions = [
+        { v: "completed",   l: "Completed"   },
+        { v: "in-progress", l: "In Progress" },
+        { v: "not-started", l: "Not Started" },
+        { v: "dropped",     l: "Dropped"     },
+        { v: "",            l: "— None —"    }
+      ].map(o => `<option value="${o.v}"${(entry.status||"") === o.v ? " selected" : ""}>${o.l}</option>`).join("");
+
       document.getElementById("detail-log-card").innerHTML = `
         <div class="detail-log-card-header">Your log</div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div>
+              <div class="detail-field-label">Status</div>
+              <div id="det-status-display">
+                ${entry.status ? statusBadgeHTML(entry.status) : `<span style="font-size:12px;color:var(--text4);font-style:italic;">Not set</span>`}
+              </div>
+              <div id="det-status-edit" style="display:none;margin-top:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <select id="det-status-select" class="det-inline-input">${statusOptions}</select>
+                  <button class="btn-isave" onclick="saveDetStatus(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelDetField('det-status-display','det-status-edit')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-status-display','det-status-edit')">Edit</button>
+          </div>
+        </div>
 
         <div class="detail-log-row">
           <div class="detail-row-header">
@@ -1469,8 +1668,9 @@
     }
 
     // Detail save functions
-    function saveDetRating(index) { updateEntry(index, { rating: document.getElementById("det-rating-select").value }); }
-    function saveDetReview(index) { updateEntry(index, { review: document.getElementById("det-review-textarea").value.trim() }); }
+    function saveDetRating(index)  { updateEntry(index, { rating:  document.getElementById("det-rating-select").value }); }
+    function saveDetReview(index)  { updateEntry(index, { review:  document.getElementById("det-review-textarea").value.trim() }); }
+    function saveDetStatus(index)  { updateEntry(index, { status:  document.getElementById("det-status-select").value }); }
     function saveDetDates(index, isRange) {
       const patch = isRange
         ? { startDate: document.getElementById("det-start").value, endDate: document.getElementById("det-end").value }
@@ -1540,6 +1740,7 @@
         document.getElementById("manual-start-date").value  = t;
         document.getElementById("manual-end-date").value    = t;
         document.getElementById("manual-review").value      = "";
+        document.getElementById("manual-status").value      = "completed";
         const sel = document.getElementById("manual-type");
         sel.value = "";
         updateSelectColor(sel);
@@ -1558,8 +1759,9 @@
       const endDate     = isRange ? document.getElementById("manual-end-date").value   : null;
       const rating      = document.getElementById("manual-rating").value;
       const review      = document.getElementById("manual-review").value.trim();
+      const status      = document.getElementById("manual-status").value;
       const entries = loadLog();
-      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true });
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true, status: status || "" });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
       toggleAddForm();
       renderLog();
@@ -1599,10 +1801,11 @@
 
     // ── Get recommendations ──
     async function getRecommendations() {
-      const title     = document.getElementById("entry-title").value.trim();
-      const history   = document.getElementById("history").value.trim();
-      const mediaType = document.getElementById("media-type").value;
-      const isRange   = RANGE_TYPES.has(mediaType);
+      const title      = document.getElementById("entry-title").value.trim();
+      const history    = document.getElementById("history").value.trim();
+      const mediaType  = document.getElementById("media-type").value;
+      const entryStatus = document.getElementById("entry-status").value;
+      const isRange    = RANGE_TYPES.has(mediaType);
       const recordDate = isRange ? null : document.getElementById("record-date").value;
       const startDate  = isRange ? document.getElementById("start-date").value : null;
       const endDate    = isRange ? document.getElementById("end-date").value   : null;
@@ -1619,11 +1822,27 @@
       status.textContent = "Thinking...";
       results.innerHTML = "";
 
+      // Build log summary (up to 20 most recent entries)
+      const logEntries = loadLog();
+      let logSummary = "";
+      if (logEntries.length > 0) {
+        logSummary = logEntries.slice(0, 20).map(e => {
+          const t = getEntryTitle(e);
+          const r = e.rating ? `${e.rating}/10` : "unrated";
+          const s = e.status || "completed";
+          return `${e.mediaType || "Media"}: "${t}" - ${r} (${s})`;
+        }).join("\n");
+      }
+
+      const contextSection = logSummary
+        ? `The user's full media log:\n${logSummary}\n\nWhat they just described/logged:\n${history}`
+        : history;
+
       const prompt = `You are a personalized media recommendation agent.
 
 The user has shared their recent viewing, reading, and listening history:
 
-${history}
+${contextSection}
 
 The user rated their overall enjoyment of this content: ${rating}/10.
 
@@ -1676,7 +1895,7 @@ Example format:
         }).join("");
 
         const review = document.getElementById("review").value.trim();
-        saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs);
+        saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, entryStatus);
 
       } catch (err) {
         status.textContent = "";
@@ -1917,7 +2136,22 @@ Example format:
       } else {
         document.getElementById("detail-log-card").innerHTML  = "";
       }
-      document.getElementById("detail-sugg-card").innerHTML = "";
+      // AI blurb card for unlogged titles
+      const suggCard = document.getElementById("detail-sugg-card");
+      suggCard.innerHTML = "";
+      const anthropicKey = getAnthropicKey();
+      const logForBlurb  = loadLog();
+      if (anthropicKey && anthropicKey.startsWith("sk-") && logForBlurb.length > 0) {
+        const blurbType = currentDetailMediaType || "";
+        suggCard.innerHTML = `
+          <div class="ai-blurb-card">
+            <div class="ai-blurb-header">
+              <span>Why you'd like it</span>
+              <button class="ai-blurb-btn" id="ai-blurb-btn" onclick="loadAIBlurb(${JSON.stringify(title)}, ${JSON.stringify(blurbType)})">Generate</button>
+            </div>
+            <div class="ai-blurb-body" id="ai-blurb-body" style="display:none;font-size:13px;color:var(--text2);line-height:1.75;padding:14px 16px;"></div>
+          </div>`;
+      }
     }
 
     // ── Log Now ──
@@ -2000,6 +2234,172 @@ Example format:
       if (!item) return;
       document.getElementById("entry-title").value = item.title;
       document.getElementById("title-dropdown").style.display = "none";
+    }
+
+    // ── AI blurb ──
+    async function loadAIBlurb(title, mediaType) {
+      const btn  = document.getElementById("ai-blurb-btn");
+      const body = document.getElementById("ai-blurb-body");
+      if (!btn || !body) return;
+      btn.disabled = true;
+      btn.textContent = "Thinking…";
+      body.style.display = "none";
+      const text = await getAIBlurb(title, mediaType);
+      btn.style.display = "none";
+      if (text) {
+        body.textContent = text;
+        body.style.display = "";
+      } else {
+        body.textContent = "Couldn't generate a blurb. Try again later.";
+        body.style.display = "";
+      }
+    }
+
+    async function getAIBlurb(title, mediaType) {
+      const apiKey = getAnthropicKey();
+      if (!apiKey || !apiKey.startsWith("sk-")) return null;
+      const logEntries = loadLog().slice(0, 15);
+      const logLines = logEntries.map(e => {
+        const t = getEntryTitle(e);
+        const r = e.rating ? `${e.rating}/10` : "unrated";
+        const s = e.status || "completed";
+        return `${e.mediaType || "Media"}: "${t}" - ${r} (${s})`;
+      }).join("\n");
+      const typeStr = mediaType ? ` (${mediaType})` : "";
+      const prompt = `Based on this user's media log:\n${logLines}\n\nIn exactly 2 sentences, explain why this user would enjoy "${title}"${typeStr}. Be specific about connections to things they've already loved.`;
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 150, messages: [{ role: "user", content: prompt }] })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.content?.[0]?.text?.trim() || null;
+      } catch { return null; }
+    }
+
+    // ── Stats page ──
+    function renderStats() {
+      const entries = loadLog();
+      const content = document.getElementById("stats-content");
+      if (!content) return;
+
+      if (entries.length === 0) {
+        content.innerHTML = '<p class="stats-empty">No entries yet — log some media to see your stats.</p>';
+        return;
+      }
+
+      // Summary
+      const totalLogged  = entries.length;
+      const rated        = entries.filter(e => e.rating);
+      const avgRating    = rated.length > 0
+        ? (rated.reduce((sum, e) => sum + parseFloat(e.rating), 0) / rated.length).toFixed(1)
+        : "—";
+
+      // Most logged type
+      const typeCounts = {};
+      for (const e of entries) { const t = e.mediaType || "Unknown"; typeCounts[t] = (typeCounts[t] || 0) + 1; }
+      const mostType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+
+      // Most active month
+      const monthCounts = {};
+      for (const e of entries) {
+        const d = new Date(e.date);
+        const key = d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+        monthCounts[key] = (monthCounts[key] || 0) + 1;
+      }
+      const mostMonth = Object.entries(monthCounts).sort((a, b) => b[1] - a[1])[0];
+
+      // Status breakdown
+      const statusCounts = {};
+      for (const e of entries) { const s = e.status || ""; if (s) statusCounts[s] = (statusCounts[s] || 0) + 1; }
+      const hasStatuses = Object.keys(statusCounts).length > 0;
+
+      // Rating distribution
+      const ratingCounts = {};
+      for (let i = 1; i <= 10; i++) ratingCounts[i] = 0;
+      for (const e of entries) { if (e.rating) ratingCounts[parseInt(e.rating)] = (ratingCounts[parseInt(e.rating)] || 0) + 1; }
+      const maxRatingCount = Math.max(...Object.values(ratingCounts), 1);
+
+      // Type bar chart
+      const typeOrder = ["Film", "Television Series", "Game", "Song", "Album", "Book"];
+      const typeBarData = typeOrder.filter(t => typeCounts[t]).map(t => ({ label: t, count: typeCounts[t] }));
+      const unknowns = Object.entries(typeCounts).filter(([t]) => !typeOrder.includes(t));
+      for (const [t, c] of unknowns) typeBarData.push({ label: t, count: c });
+      const maxTypeCount = Math.max(...typeBarData.map(d => d.count), 1);
+
+      const typeColors = { "Film": "#9aa0a8", "Television Series": "#ff6b6b", "Game": "#4fa3f7", "Song": "#4ecb71", "Album": "#4ecb71", "Book": "#ff8c42" };
+
+      const statusLabels = { "completed": "Completed", "in-progress": "In Progress", "not-started": "Not Started", "dropped": "Dropped" };
+      const statusColors = { "completed": "#4ecb71", "in-progress": "#4fa3f7", "not-started": "#aaaaaa", "dropped": "#ff6b6b" };
+      const maxStatusCount = Math.max(...Object.values(statusCounts), 1);
+
+      content.innerHTML = `
+        <div class="stats-summary-grid">
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Total Logged</div>
+            <div class="stats-summary-value">${totalLogged}</div>
+          </div>
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Average Rating</div>
+            <div class="stats-summary-value">${avgRating}</div>
+            <div class="stats-summary-sub">out of 10</div>
+          </div>
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Most Logged Type</div>
+            <div class="stats-summary-value" style="font-size:16px;">${mostType ? mostType[0] : "—"}</div>
+            <div class="stats-summary-sub">${mostType ? mostType[1] + " entries" : ""}</div>
+          </div>
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Most Active Month</div>
+            <div class="stats-summary-value" style="font-size:16px;">${mostMonth ? mostMonth[0] : "—"}</div>
+            <div class="stats-summary-sub">${mostMonth ? mostMonth[1] + " entries" : ""}</div>
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <div class="stats-section-title">By Media Type</div>
+          ${typeBarData.map(d => `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label">${d.label}</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${Math.round(d.count / maxTypeCount * 100)}%;background:${typeColors[d.label] || "#888"};"></div>
+              </div>
+              <span class="stats-bar-count">${d.count}</span>
+            </div>`).join("")}
+        </div>
+
+        <div class="stats-section">
+          <div class="stats-section-title">Rating Distribution</div>
+          ${[1,2,3,4,5,6,7,8,9,10].map(r => `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label">${r}/10</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${Math.round(ratingCounts[r] / maxRatingCount * 100)}%;background:var(--text3);"></div>
+              </div>
+              <span class="stats-bar-count">${ratingCounts[r]}</span>
+            </div>`).join("")}
+        </div>
+
+        ${hasStatuses ? `
+        <div class="stats-section">
+          <div class="stats-section-title">Status Breakdown</div>
+          ${Object.entries(statusCounts).map(([s, c]) => `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label">${statusLabels[s] || s}</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${Math.round(c / maxStatusCount * 100)}%;background:${statusColors[s] || "#888"};"></div>
+              </div>
+              <span class="stats-bar-count">${c}</span>
+            </div>`).join("")}
+        </div>` : ""}
+      `;
     }
 
     // ── Settings ──
