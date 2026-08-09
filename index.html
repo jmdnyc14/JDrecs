@@ -508,6 +508,30 @@
       text-align: center;
     }
 
+    .search-loading {
+      padding: 14px;
+      font-size: 12px;
+      color: var(--text5);
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* ── Log Now button ── */
+    .log-now-btn {
+      margin-top: 9px;
+      width: auto;
+      padding: 6px 15px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 7px;
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border: none;
+      letter-spacing: 0.01em;
+      transition: background 0.15s;
+    }
+    .log-now-btn:hover { background: var(--btn-hover); }
+
     /* ── Misc ── */
     body.dark .form-row select,
     body.dark .manual-form-row select { color-scheme: dark; }
@@ -676,7 +700,7 @@
 
   <!-- ── Detail view ── -->
   <div id="view-detail" style="display:none;">
-    <button class="detail-back-btn" onclick="showView('log')">← Back to log</button>
+    <button class="detail-back-btn" onclick="goBackFromDetail()">← Back</button>
 
     <div class="detail-hero-card">
       <div class="detail-hero-top" id="detail-hero-top">
@@ -688,6 +712,7 @@
             <button class="detail-edit-title-btn" id="detail-edit-title-btn" onclick="startDetTitle()">Edit</button>
           </div>
           <div id="detail-title-edit" style="display:none;margin-top:6px;"></div>
+          <div id="detail-log-now-wrap"></div>
         </div>
       </div>
       <div class="detail-hero-description" id="detail-description"></div>
@@ -704,6 +729,9 @@
     const THEME_KEY = "jdlogs_theme";
 
     let currentDetailIndex = null;
+    let currentDetailTitle = null;
+    let currentBackView    = "home";
+    let searchTimer        = null;
 
     const TYPE_COLORS = {
       "Film":              { bg: "#ffffff", border: "1px solid #bbb" },
@@ -748,6 +776,8 @@
       document.getElementById("nav-log-btn").classList.toggle("active", v !== "home");
       if (v === "detail" && idx !== undefined) {
         currentDetailIndex = idx;
+        currentDetailTitle = null;
+        currentBackView    = "log";
         loadDetailView(idx);
       }
     }
@@ -1145,6 +1175,8 @@
       document.getElementById("detail-title").style.display = "";
       document.getElementById("detail-edit-title-btn").style.display = "";
       document.getElementById("detail-title-edit").style.display = "none";
+      document.getElementById("detail-log-now-wrap").innerHTML =
+        `<button class="log-now-btn" onclick="logNow(${JSON.stringify(title)})">+ Log Now</button>`;
 
       // Description
       const descEl = document.getElementById("detail-description");
@@ -1523,42 +1555,52 @@ Example format:
       }
     }
 
-    // ── Search ──
-    function highlightMatch(text, q) {
-      const idx = text.toLowerCase().indexOf(q);
-      if (idx === -1) return text;
-      return text.slice(0, idx)
-        + `<mark>${text.slice(idx, idx + q.length)}</mark>`
-        + text.slice(idx + q.length);
-    }
-
+    // ── Search (Wikipedia-powered) ──
     function updateSearch() {
-      const q        = document.getElementById("search-input").value.trim().toLowerCase();
+      const q        = document.getElementById("search-input").value.trim();
       const dropdown = document.getElementById("search-dropdown");
-      if (!q) { dropdown.style.display = "none"; return; }
-
-      const entries = loadLog();
-      const matches = entries
-        .map((entry, index) => ({ entry, index }))
-        .filter(({ entry }) => getEntryTitle(entry).toLowerCase().includes(q));
-
-      if (matches.length === 0) {
-        dropdown.innerHTML = `<div class="search-no-results">No entries matching "${q}"</div>`;
-      } else {
-        dropdown.innerHTML = matches.map(({ entry, index }) =>
-          `<div class="search-result-item" onclick="selectSearchResult(${index})">
-            <span class="search-result-title">${highlightMatch(getEntryTitle(entry), q)}</span>
-            ${typeTagHTML(entry.mediaType)}
-          </div>`
-        ).join("");
-      }
+      clearTimeout(searchTimer);
+      if (q.length < 2) { dropdown.style.display = "none"; return; }
+      dropdown.innerHTML = `<div class="search-loading">Searching…</div>`;
       dropdown.style.display = "";
+      searchTimer = setTimeout(() => doWikiSearch(q), 320);
     }
 
-    function selectSearchResult(index) {
+    async function doWikiSearch(q) {
+      const dropdown = document.getElementById("search-dropdown");
+      try {
+        const res  = await fetch(
+          `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=7&utf8=1`
+        );
+        const data = await res.json();
+        const results = (data.query?.search || []);
+        if (results.length === 0) {
+          dropdown.innerHTML = `<div class="search-no-results">No results for "${q}"</div>`;
+        } else {
+          const entries = loadLog();
+          dropdown.innerHTML = results.map(r => {
+            const logIdx = entries.findIndex(e => getEntryTitle(e).toLowerCase() === r.title.toLowerCase());
+            const badge  = logIdx !== -1 ? typeTagHTML(entries[logIdx].mediaType) : "";
+            return `<div class="search-result-item" onclick="selectSearchResult(${JSON.stringify(r.title)}, ${logIdx})">
+              <span class="search-result-title">${r.title}</span>
+              ${badge}
+            </div>`;
+          }).join("");
+        }
+      } catch {
+        dropdown.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
+      }
+    }
+
+    function selectSearchResult(title, logIdx) {
       document.getElementById("search-input").value = "";
       document.getElementById("search-dropdown").style.display = "none";
-      showView("detail", index);
+      if (logIdx !== -1) {
+        currentBackView = "home";
+        showView("detail", logIdx);
+      } else {
+        showDetailForTitle(title);
+      }
     }
 
     document.addEventListener("click", function(e) {
@@ -1575,6 +1617,102 @@ Example format:
         this.blur();
       }
     });
+
+    // ── Detail for unlogged media (from search) ──
+    function showDetailForTitle(title) {
+      currentDetailIndex = null;
+      currentDetailTitle = title;
+      currentBackView    = "home";
+      ["home", "log", "detail"].forEach(n =>
+        document.getElementById(`view-${n}`).style.display = n === "detail" ? "" : "none");
+      document.getElementById("nav-log-btn").classList.add("active");
+      loadDetailViewForTitle(title);
+    }
+
+    async function loadDetailViewForTitle(title) {
+      const initial = title.charAt(0).toUpperCase();
+
+      // Placeholder while fetching
+      document.getElementById("detail-hero-top").style.background =
+        `linear-gradient(135deg, rgba(136,136,136,0.15) 0%, rgba(136,136,136,0.04) 100%)`;
+      document.getElementById("detail-poster").innerHTML =
+        `<div class="poster-fallback" style="background:linear-gradient(160deg,#888,#444)">${initial}</div>`;
+      document.getElementById("detail-meta").innerHTML =
+        `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go"
+            target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+      document.getElementById("detail-title").textContent      = title;
+      document.getElementById("detail-title").style.display    = "";
+      document.getElementById("detail-edit-title-btn").style.display = "none";
+      document.getElementById("detail-title-edit").style.display     = "none";
+      document.getElementById("detail-log-now-wrap").innerHTML =
+        `<button class="log-now-btn" onclick="logNow(${JSON.stringify(title)})">+ Log Now</button>`;
+
+      const descEl = document.getElementById("detail-description");
+      descEl.textContent = "Fetching description…";
+      descEl.className   = "detail-hero-description dim";
+      descEl.style.display = "";
+
+      // Fetch Wikipedia
+      const wiki = await fetchWikipediaData(title);
+      if (wiki) {
+        if (wiki.extract) {
+          descEl.textContent = wiki.extract;
+          descEl.className   = "detail-hero-description";
+        } else { descEl.style.display = "none"; }
+
+        if (wiki.thumbnail) {
+          document.getElementById("detail-poster").innerHTML =
+            `<img src="${wiki.thumbnail}" alt="">`;
+        }
+        const wikiUrl = wiki.pageUrl ||
+          `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
+        document.getElementById("detail-meta").innerHTML =
+          `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+      } else { descEl.style.display = "none"; }
+
+      // Show log data if there's a matching entry
+      const entries = loadLog();
+      const logIdx  = entries.findIndex(e => getEntryTitle(e).toLowerCase() === title.toLowerCase());
+      if (logIdx !== -1) {
+        const entry   = entries[logIdx];
+        const isRange = RANGE_TYPES.has(entry.mediaType);
+        const rawAccent = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+        const accent    = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
+        document.getElementById("detail-hero-top").style.background =
+          `linear-gradient(135deg, ${hexToRgba(accent, 0.22)} 0%, ${hexToRgba(accent, 0.05)} 100%)`;
+        // prepend type tag to meta
+        const metaEl = document.getElementById("detail-meta");
+        metaEl.innerHTML = typeTagHTML(entry.mediaType) + metaEl.innerHTML;
+        renderDetailLog(entry, logIdx, isRange);
+      } else {
+        document.getElementById("detail-log-card").innerHTML  = "";
+      }
+      document.getElementById("detail-sugg-card").innerHTML = "";
+    }
+
+    // ── Log Now ──
+    function logNow(title) {
+      showView("log");
+      const form = document.getElementById("manual-form");
+      form.style.display = "block";
+      const t = new Date().toISOString().slice(0, 10);
+      document.getElementById("manual-title").value      = title;
+      document.getElementById("manual-history").value    = "";
+      document.getElementById("manual-rating").value     = "5";
+      document.getElementById("manual-review").value     = "";
+      document.getElementById("manual-date").value       = t;
+      document.getElementById("manual-start-date").value = t;
+      document.getElementById("manual-end-date").value   = t;
+      const sel = document.getElementById("manual-type");
+      sel.value = "";
+      updateSelectColor(sel);
+      toggleManualDateFields();
+      form.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function goBackFromDetail() {
+      showView(currentBackView || "log");
+    }
 
     renderLog();
   </script>
