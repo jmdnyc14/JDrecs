@@ -1,261 +1,1930 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Media Agent</title>
+  <title>jdlogs</title>
   <style>
+    /* ── Theme variables ── */
+    :root {
+      --bg:           #06091a;
+      --surface:      rgba(255,255,255,0.07);
+      --surface2:     rgba(255,255,255,0.04);
+      --border:       rgba(255,255,255,0.1);
+      --border2:      rgba(255,255,255,0.15);
+      --text:         #f0f0f0;
+      --text2:        rgba(255,255,255,0.6);
+      --text3:        rgba(255,255,255,0.42);
+      --text4:        rgba(255,255,255,0.28);
+      --text5:        rgba(255,255,255,0.18);
+      --text6:        rgba(255,255,255,0.1);
+      --btn-bg:       #F58426;
+      --btn-fg:       #ffffff;
+      --btn-hover:    #e8711a;
+      --err-bg:       rgba(255,0,0,0.1);
+      --err-border:   rgba(255,100,100,0.3);
+      --err-text:     #ff8080;
+      --link-deco:    rgba(255,255,255,0.2);
+      --accent:       #F58426;
+      --glass-bg:     rgba(255,255,255,0.07);
+      --glass-border: rgba(255,255,255,0.12);
+    }
+
+    /* ── Background orbs ── */
+    .orb {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; z-index: -1; filter: blur(90px); opacity: 0.45;
+    }
+    .orb-blue-1   { width: 480px; height: 480px; background: #006BB6; top: -160px; right: -100px; }
+    .orb-orange-1 { width: 320px; height: 320px; background: #F58426; bottom: 60px; left: -80px; }
+    .orb-blue-2   { width: 220px; height: 220px; background: #0050a0; bottom: 200px; right: 60px; opacity: 0.3; }
+
     body {
       font-family: sans-serif;
-      max-width: 620px;
-      margin: 48px auto;
-      padding: 0 24px;
-      color: #1a1a1a;
-      background: #f9f9f7;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 32px 100px;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
     }
 
-    h1 {
+    /* ── Nav ── */
+    #main-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0 20px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(6,9,26,0.7);
+    }
+
+    .nav-logo {
       font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 6px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #f0f0f0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .nav-logo .logo-accent { color: #F58426; }
+    .nav-logo:hover { opacity: 0.85; }
+
+    .nav-log-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: auto;
+      padding: 8px 15px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: #f0f0f0;
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: background 0.15s;
+    }
+    .nav-log-btn:hover { background: rgba(255,255,255,0.13); }
+    .nav-log-btn.active { background: linear-gradient(135deg, #F58426 0%, #e8711a 100%); color: #fff; border-color: transparent; }
+    .nav-log-btn.active:hover { opacity: 0.9; }
+
+    .nav-badge {
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      min-width: 16px;
+      text-align: center;
+      line-height: 1.6;
     }
 
-    .subtitle {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 24px;
-    }
+    /* ── Form elements ── */
+    .subtitle { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 24px; line-height: 1.6; }
 
     label {
       display: block;
       font-size: 13px;
       font-weight: 500;
       margin-bottom: 6px;
-      color: #444;
+      color: var(--text2);
     }
+
+    .title-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: #f0f0f0;
+      box-sizing: border-box;
+      margin-bottom: 14px;
+    }
+    .title-input:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+    .title-input::placeholder { color: rgba(255,255,255,0.32); font-weight: 400; }
 
     textarea {
       width: 100%;
       padding: 12px;
       font-size: 14px;
       font-family: sans-serif;
-      border: 1px solid #ddd;
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 10px;
-      background: #fff;
+      background: rgba(255,255,255,0.08);
+      color: #f0f0f0;
       box-sizing: border-box;
       resize: vertical;
       line-height: 1.6;
-      color: #1a1a1a;
+    }
+    textarea:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+    textarea::placeholder { color: rgba(255,255,255,0.32); }
+
+    .key-row { display: flex; gap: 8px; margin: 12px 0; align-items: center; }
+    .key-row input {
+      flex: 1; padding: 10px 12px; font-size: 13px; font-family: monospace;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+      background: rgba(255,255,255,0.08); color: #f0f0f0;
+    }
+    .key-row input:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+
+    .key-note { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+    .key-note a { color: #6db8ff; }
+
+    .form-row {
+      display: flex; gap: 16px; margin: 12px 0; flex-wrap: wrap; align-items: flex-end;
+    }
+    .form-row > div { display: flex; flex-direction: column; gap: 5px; }
+
+    .form-row select,
+    .form-row input[type="date"] {
+      padding: 10px 12px; font-size: 14px; font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+      background: rgba(255,255,255,0.08); color: #f0f0f0; cursor: pointer;
+      color-scheme: dark;
+    }
+    .form-row select:focus,
+    .form-row input[type="date"]:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+
+    button {
+      background: linear-gradient(135deg, #F58426 0%, #e8711a 100%);
+      color: #fff; border: none;
+      padding: 11px 24px; border-radius: 10px; font-size: 14px; font-weight: 500;
+      cursor: pointer; width: 100%; transition: opacity 0.15s;
+    }
+    button:hover    { opacity: 0.9; }
+    button:disabled { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.4); cursor: not-allowed; opacity: 1; }
+
+    #status { margin-top: 12px; font-size: 13px; color: var(--text3); min-height: 20px; text-align: center; }
+    #results { margin-top: 24px; }
+
+    .result-card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px; padding: 16px 18px; margin-bottom: 12px;
+    }
+    .result-number { font-size: 11px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .result-title { font-size: 15px; font-weight: 600; color: #f0f0f0; margin-bottom: 4px; }
+    .result-title a { color: #6db8ff; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.2); }
+    .result-title a:hover { text-decoration-color: #6db8ff; }
+    .result-reason { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+    .error {
+      background: rgba(255,0,0,0.1); border: 1px solid rgba(255,100,100,0.3);
+      border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #ff8080;
     }
 
-    textarea:focus {
+    .type-tag {
+      display: inline-block; padding: 2px 9px; border-radius: 4px;
+      font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 0.02em; white-space: nowrap;
+    }
+
+    /* ── Log view ── */
+    #view-log h2 { font-size: 18px; font-weight: 600; margin: 0; color: #f0f0f0; }
+
+    .log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 8px; }
+    .log-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .log-actions button { width: auto; padding: 7px 14px; font-size: 12px; border-radius: 6px; }
+
+    .btn-add       { background: linear-gradient(135deg, #F58426 0%, #e8711a 100%); color: #fff; border: none; }
+    .btn-add:hover { opacity: 0.9; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.15); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.15); opacity: 1; }
+    .btn-danger    { background: rgba(255,0,0,0.12); color: #ff8080; border: 1px solid rgba(255,100,100,0.25); }
+    .btn-danger:hover { background: rgba(255,0,0,0.2); opacity: 1; }
+
+    .log-empty { font-size: 13px; color: var(--text4); text-align: center; padding: 24px 0; }
+
+    .manual-form {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px; padding: 16px 18px; margin-bottom: 16px;
+    }
+    .manual-form-row {
+      display: flex; gap: 12px; margin: 10px 0; align-items: flex-end; flex-wrap: wrap;
+    }
+    .manual-form-row > div { display: flex; flex-direction: column; gap: 5px; }
+    .manual-form-row select,
+    .manual-form-row input[type="date"] {
+      padding: 8px 10px; font-size: 13px; font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+      background: rgba(255,255,255,0.08); color: #f0f0f0; cursor: pointer;
+      color-scheme: dark;
+    }
+    .manual-form-row select:focus,
+    .manual-form-row input[type="date"]:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+    .manual-form-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .manual-form-btns button { width: auto; padding: 9px 18px; font-size: 13px; }
+    .btn-form-cancel { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.15); }
+    .btn-form-cancel:hover { background: rgba(255,255,255,0.15); opacity: 1; }
+
+    /* ── Log entry list ── */
+    .log-entry {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+      position: relative; z-index: 1;
+    }
+    .log-entry-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .log-entry-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .log-entry-top  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .entry-title-btn {
+      background: none; border: none; padding: 0; width: auto;
+      font-size: 14px; font-weight: 600; color: #f0f0f0;
+      cursor: pointer; text-align: left; letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+    .entry-title-btn:hover { color: rgba(255,255,255,0.7); background: none; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.2); }
+
+    .btn-chevron {
+      background: none; border: none; color: rgba(255,255,255,0.35);
+      font-size: 13px; cursor: pointer; padding: 0; width: auto; line-height: 1; flex-shrink: 0;
+    }
+    .btn-chevron:hover { color: #fff; background: none; }
+
+    .log-entry-logged { font-size: 11px; color: var(--text5); text-transform: uppercase; letter-spacing: 0.05em; }
+    .log-entry-record { font-size: 11px; font-weight: 600; color: var(--text3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    .log-entry-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .log-entry-rating-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .log-entry-rating { font-size: 12px; font-weight: 600; color: var(--text2); background: rgba(255,255,255,0.08); border-radius: 5px; padding: 2px 8px; white-space: nowrap; }
+
+    .btn-inline { background: none; border: none; cursor: pointer; padding: 0; width: auto; font-size: 11px; text-decoration: underline; font-weight: 400; }
+    .btn-inline.muted  { color: var(--text4); }
+    .btn-inline.muted:hover  { color: var(--text2); background: none; }
+    .btn-inline.danger { color: var(--text5); }
+    .btn-inline.danger:hover { color: #ff8080; background: none; }
+
+    .inline-edit { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .inline-edit input[type="date"], .inline-edit select {
+      padding: 3px 7px; font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+      background: rgba(255,255,255,0.08); color: #f0f0f0;
+      color-scheme: dark;
+    }
+    .inline-edit input[type="date"]:focus, .inline-edit select:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+    .inline-edit .date-range-label { font-size: 10px; color: var(--text4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .log-review-edit-area {
+      width: 100%; padding: 6px 8px; font-size: 12px; font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+      background: rgba(255,255,255,0.08); color: #f0f0f0;
+      resize: vertical; box-sizing: border-box;
+    }
+    .log-review-edit-area:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+
+    .log-entry-review-label { font-size: 10px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .log-entry-review-text  { font-size: 12px; color: var(--text2); line-height: 1.5; white-space: pre-wrap; margin-bottom: 2px; }
+
+    .btn-isave, .btn-icancel {
+      background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px;
+      font-size: 11px; padding: 3px 8px; cursor: pointer; width: auto;
+      color: var(--text2); font-weight: 500;
+    }
+    .btn-isave { background: linear-gradient(135deg, #F58426 0%, #e8711a 100%); color: #fff; border-color: transparent; }
+    .btn-isave:hover  { opacity: 0.9; }
+    .btn-icancel:hover { background: rgba(255,255,255,0.08); opacity: 1; }
+
+    .log-entry-body { margin-top: 12px; }
+    .log-history { font-size: 12px; color: var(--text3); line-height: 1.5; border-left: 2px solid rgba(255,255,255,0.1); padding-left: 10px; margin-bottom: 10px; white-space: pre-wrap; }
+    .sugg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .sugg-label  { font-size: 11px; font-weight: 700; color: var(--text5); text-transform: uppercase; letter-spacing: 0.06em; }
+    .log-type-group  { margin-bottom: 10px; }
+    .log-type-label  { font-size: 11px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .log-item        { font-size: 13px; color: var(--text); padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .log-item:last-child { border-bottom: none; }
+    .log-item-title  { font-weight: 600; }
+    .log-item-reason { color: var(--text3); font-size: 12px; }
+
+    /* ── Detail view ── */
+    .detail-back-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: none; border: none; padding: 0; width: auto;
+      font-size: 13px; color: var(--text3); cursor: pointer; margin-bottom: 14px;
+    }
+    .detail-back-btn:hover { color: #f0f0f0; background: none; }
+
+    .detail-hero-card {
+      border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); margin-bottom: 14px;
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    .detail-hero-top {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 20px;
+    }
+
+    .detail-poster {
+      width: 96px; height: 144px; border-radius: 7px; overflow: hidden;
+      flex-shrink: 0; box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+      background: rgba(255,255,255,0.05);
+    }
+    .detail-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .poster-fallback {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px; font-weight: 800; color: rgba(255,255,255,0.92);
+      letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.28);
+    }
+
+    .detail-hero-info { flex: 1; min-width: 0; padding-top: 2px; }
+
+    .detail-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+
+    .detail-wiki-link {
+      font-size: 11px; color: #6db8ff; text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 2px 8px;
+      display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+    }
+    .detail-wiki-link:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
+    .detail-title-row { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 2px; }
+    .detail-title {
+      font-size: 21px; font-weight: 700; color: #f0f0f0;
+      letter-spacing: -0.02em; line-height: 1.2; margin: 0; word-break: break-word;
+    }
+    .detail-edit-title-btn {
+      background: none; border: none; padding: 0; width: auto;
+      font-size: 10px; color: var(--text5); cursor: pointer;
+      text-decoration: underline; flex-shrink: 0; margin-top: 5px;
+    }
+    .detail-edit-title-btn:hover { color: var(--text3); background: none; }
+
+    .detail-hero-description {
+      border-top: 1px solid rgba(255,255,255,0.08); padding: 14px 20px;
+      font-size: 13px; color: var(--text2); line-height: 1.75;
+      background: rgba(0,0,0,0.15);
+    }
+    .detail-hero-description.dim { color: var(--text4); font-style: italic; }
+
+    .detail-log-card {
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      margin-bottom: 14px;
+    }
+    .detail-log-card-header {
+      padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 10px; font-weight: 700; color: var(--text4);
+      text-transform: uppercase; letter-spacing: 0.08em; background: rgba(255,255,255,0.04);
+    }
+    .detail-log-row { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .detail-log-row:last-child { border-bottom: none; }
+    .detail-row-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .detail-field-label { font-size: 10px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .detail-field-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+    .rating-big { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #f0f0f0; margin-bottom: 6px; }
+    .rating-dots { display: flex; gap: 4px; }
+    .rating-dot  { width: 7px; height: 7px; border-radius: 50%; }
+    .rating-dot.filled { background: #F58426; }
+    .rating-dot.empty  { background: rgba(255,255,255,0.15); }
+
+    .det-inline-input {
+      padding: 5px 9px; font-size: 13px; font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+      background: rgba(255,255,255,0.08); color: #f0f0f0;
+      color-scheme: dark;
+    }
+    .det-inline-input:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+    .det-inline-input[type="date"] { font-size: 12px; padding: 4px 8px; }
+
+    /* ── Search bar ── */
+    #search-wrap {
+      position: relative;
+      margin-bottom: 22px;
+      z-index: 50;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 14px 9px 36px;
+      font-size: 13.5px;
+      font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: #f0f0f0;
+      box-sizing: border-box;
       outline: none;
-      border-color: #999;
+    }
+    .search-input:focus { border-color: rgba(245,132,38,0.6); }
+    .search-input::placeholder { color: rgba(255,255,255,0.32); }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: rgba(255,255,255,0.32);
+      pointer-events: none;
+      line-height: 1;
     }
 
-    .key-row {
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0; right: 0;
+      background: rgba(10,14,30,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      z-index: 300;
+      overflow: hidden;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .search-result-item {
       display: flex;
-      gap: 8px;
-      margin: 12px 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: rgba(255,255,255,0.08); }
+
+    .search-result-left {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .search-result-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #f0f0f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-result-sub {
+      font-size: 11px;
+      color: var(--text4);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 7px;
       align-items: center;
     }
 
-    .key-row input {
+    .search-input-wrap {
+      position: relative;
       flex: 1;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-family: monospace;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: #fff;
-      color: #1a1a1a;
     }
 
-    .key-row input:focus {
-      outline: none;
-      border-color: #999;
-    }
-
-    .key-note {
+    .search-type-select {
+      padding: 8px 10px;
       font-size: 12px;
-      color: #888;
-      margin-bottom: 16px;
-    }
-
-    .key-note a {
-      color: #555;
-    }
-
-    button {
-      background: #1a1a1a;
-      color: #fff;
-      border: none;
-      padding: 11px 24px;
+      font-family: sans-serif;
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
+      background: rgba(255,255,255,0.08);
+      color: #f0f0f0;
       cursor: pointer;
-      width: 100%;
-      transition: background 0.15s;
+      flex-shrink: 0;
+      outline: none;
+      color-scheme: dark;
     }
+    .search-type-select:focus { border-color: rgba(245,132,38,0.6); }
 
-    button:hover {
-      background: #333;
-    }
-
-    button:disabled {
-      background: #aaa;
-      cursor: not-allowed;
-    }
-
-    #status {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #888;
-      min-height: 20px;
+    .search-no-results {
+      padding: 14px;
+      font-size: 12px;
+      color: var(--text4);
       text-align: center;
     }
 
-    #results {
-      margin-top: 24px;
+    .search-loading {
+      padding: 14px;
+      font-size: 12px;
+      color: var(--text5);
+      text-align: center;
+      font-style: italic;
     }
 
-    .result-card {
-      background: #fff;
-      border: 1px solid #e8e8e4;
-      border-radius: 10px;
-      padding: 16px 18px;
-      margin-bottom: 12px;
+    /* ── Log Now button ── */
+    .log-now-btn {
+      margin-top: 9px;
+      width: auto;
+      padding: 6px 15px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #F58426 0%, #e8711a 100%);
+      color: #fff;
+      border: none;
+      letter-spacing: 0.01em;
+    }
+    .log-now-btn:hover { opacity: 0.9; }
+
+    /* ── Misc ── */
+    .form-row select,
+    .manual-form-row select { color-scheme: dark; }
+
+    /* ── Settings ── */
+    .settings-btn {
+      background: none; border: none; width: auto;
+      padding: 6px 8px; font-size: 17px; color: rgba(255,255,255,0.35);
+      cursor: pointer; border-radius: 7px;
+    }
+    .settings-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+    .settings-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 500; display: flex; align-items: flex-start;
+      justify-content: center; padding: 72px 16px 0;
     }
 
-    .result-number {
+    .settings-panel {
+      background: rgba(10,14,30,0.95);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px; padding: 22px 24px; width: 100%; max-width: 440px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .settings-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .settings-title { font-size: 15px; font-weight: 700; color: #f0f0f0; }
+    .settings-close {
+      background: none; border: none; width: auto; padding: 4px 8px;
+      font-size: 16px; color: var(--text4); cursor: pointer; border-radius: 6px;
+    }
+    .settings-close:hover { color: #f0f0f0; background: rgba(255,255,255,0.08); opacity: 1; }
+
+    .settings-field { margin-bottom: 16px; }
+    .settings-field label { margin-bottom: 6px; }
+    .settings-field .key-row { margin: 6px 0 4px; }
+    .settings-field .key-note { margin: 0; }
+
+    /* ── Search section labels ── */
+    .search-section-label {
+      padding: 5px 14px 4px;
+      font-size: 10px; font-weight: 700; color: var(--text5);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* ── Entry poster (log list) ── */
+    .entry-poster {
+      width: 44px; height: 66px; border-radius: 5px; overflow: hidden;
+      flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); align-self: flex-start;
+    }
+    .entry-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .entry-poster-fallback {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: rgba(255,255,255,0.92);
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-block; padding: 2px 7px; border-radius: 10px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #fff; white-space: nowrap;
+    }
+    .status-completed   { background: #4ecb71; }
+    .status-in-progress { background: #4fa3f7; }
+    .status-not-started { background: #aaaaaa; }
+    .status-dropped     { background: #ff6b6b; }
+
+    /* ── Log filters ── */
+    .log-filters {
+      display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .log-filters select {
+      font-size: 12px; padding: 5px 8px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08); color: #f0f0f0;
+      cursor: pointer; font-family: sans-serif;
+      color-scheme: dark;
+    }
+    .log-filters select:focus { outline: none; border-color: rgba(245,132,38,0.6); }
+
+    /* ── AI blurb card ── */
+    .ai-blurb-card {
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      margin-bottom: 14px;
+    }
+    .ai-blurb-header {
+      padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 10px; font-weight: 700; color: var(--text4);
+      text-transform: uppercase; letter-spacing: 0.08em; background: rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ai-blurb-btn {
+      width: auto; padding: 4px 10px; font-size: 11px; border-radius: 6px;
+      background: linear-gradient(135deg, #F58426 0%, #e8711a 100%);
+      color: #fff; border: none;
+      font-weight: 500; letter-spacing: 0; text-transform: none;
+    }
+    .ai-blurb-btn:hover { opacity: 0.9; }
+    .ai-blurb-btn:disabled { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.4); cursor: not-allowed; opacity: 1; }
+
+    /* ── Stats page ── */
+    #view-stats h2 { font-size: 18px; font-weight: 600; margin: 0 0 20px; color: #f0f0f0; }
+    .stats-summary-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px;
+    }
+    .stats-summary-card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px; padding: 14px 16px;
+    }
+    .stats-summary-label { font-size: 10px; font-weight: 700; color: var(--text4); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .stats-summary-value { font-size: 22px; font-weight: 700; color: #f0f0f0; letter-spacing: -0.02em; }
+    .stats-summary-sub   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .stats-section-title { font-size: 12px; font-weight: 700; color: #F58426; text-transform: uppercase; letter-spacing: 0.07em; margin: 0 0 10px; }
+    .stats-section { margin-bottom: 24px; }
+    .stats-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .stats-bar-label { font-size: 12px; color: var(--text2); min-width: 130px; flex-shrink: 0; }
+    .stats-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; }
+    .stats-bar-fill  { height: 100%; border-radius: 5px; }
+    .stats-bar-count { font-size: 12px; color: var(--text3); min-width: 28px; text-align: right; }
+    .stats-empty { font-size: 13px; color: var(--text4); text-align: center; padding: 24px 0; }
+
+    /* ── View containers ── */
+    #view-home, #view-log, #view-detail, #view-stats {
+      position: relative;
+    }
+
+    /* ── Artist sub-input (Song / Album) ── */
+    .artist-input-row {
+      display: none;
+      position: relative;
+      margin-top: -8px;
+      margin-bottom: 14px;
+    }
+    .artist-input-row.visible { display: block; }
+    .artist-label {
       font-size: 11px;
       font-weight: 600;
-      color: #aaa;
+      color: var(--text4);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 4px;
-    }
-
-    .result-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 4px;
-    }
-
-    .result-reason {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.6;
-    }
-
-    .error {
-      background: #fff3f3;
-      border: 1px solid #fcc;
-      border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 13px;
-      color: #c00;
-    }
-
-    .rating-row {
-      margin: 12px 0;
-    }
-
-    .rating-row select {
-      padding: 10px 12px;
-      font-size: 14px;
-      font-family: sans-serif;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: #fff;
-      color: #1a1a1a;
-      cursor: pointer;
-    }
-
-    .rating-row select:focus {
-      outline: none;
-      border-color: #999;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
 
-  <h1>What should I watch next?</h1>
-  <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
+  <div class="orb orb-blue-1"></div>
+  <div class="orb orb-orange-1"></div>
+  <div class="orb orb-blue-2"></div>
 
-  <label for="history">Your recent watches, reads, or listens</label>
-  <textarea id="history" rows="6"
-    placeholder="e.g.
+  <!-- ── Persistent nav ── -->
+  <nav id="main-nav">
+    <span class="nav-logo" onclick="showView('home')"><span class="logo-accent">jd</span>logs</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+      <button class="nav-log-btn" id="nav-stats-btn" onclick="showView('stats')">Stats</button>
+      <button class="nav-log-btn" id="nav-log-btn" onclick="showView('log')">
+        Media Log
+        <span class="nav-badge" id="nav-badge" style="display:none;"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Settings modal ── -->
+  <div id="settings-overlay" style="display:none;" onclick="closeSettingsOutside(event)">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <span class="settings-title">Settings</span>
+        <button class="settings-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="settings-field">
+        <label for="settings-anthropic-key">Anthropic API key</label>
+        <div class="key-row">
+          <input type="password" id="settings-anthropic-key" placeholder="sk-ant-…"
+            oninput="localStorage.setItem('jdlogs_anthropic_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</p>
+      </div>
+      <div class="settings-field">
+        <label for="settings-tmdb-key">TMDB API key <span style="font-weight:400;color:var(--text4);">(Film &amp; TV search)</span></label>
+        <div class="key-row">
+          <input type="password" id="settings-tmdb-key" placeholder="b68a…"
+            oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get one at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Search bar ── -->
+  <div id="search-wrap">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search-input" class="search-input"
+          placeholder="Search any media…"
+          autocomplete="off" spellcheck="false"
+          oninput="updateSearch()" onfocus="updateSearch()" />
+      </div>
+      <select id="search-type" class="search-type-select" onchange="updateSearch(); toggleSearchArtist()">
+        <option value="">All</option>
+        <option value="Film">Film</option>
+        <option value="Television Series">TV</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+        <option value="Album">Album</option>
+        <option value="Book">Book</option>
+      </select>
+    </div>
+    <div id="search-artist-row" class="artist-input-row" style="margin-top:6px;margin-bottom:0;">
+      <div class="artist-label">Artist</div>
+      <div class="search-input-wrap">
+        <span class="search-icon">♪</span>
+        <input type="text" id="search-artist" class="search-input"
+          placeholder="Artist name to narrow results…"
+          autocomplete="off" spellcheck="false"
+          oninput="updateSearch()" />
+      </div>
+    </div>
+    <div id="search-dropdown" class="search-dropdown" style="display:none;"></div>
+  </div>
+
+  <!-- ── Home view ── -->
+  <div id="view-home">
+    <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
+
+    <label for="entry-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+    <div style="position:relative;margin-bottom:14px;">
+      <input type="text" id="entry-title" class="title-input" style="margin-bottom:0;"
+        placeholder="e.g. Inception, Hollow Knight, Dune"
+        autocomplete="off" spellcheck="false"
+        oninput="updateTitleSearch()" onfocus="updateTitleSearch()" />
+      <div id="title-dropdown" class="search-dropdown" style="display:none;"></div>
+    </div>
+    <div id="title-artist-row" class="artist-input-row">
+      <div class="artist-label">Artist</div>
+      <input type="text" id="entry-artist" class="title-input" style="margin-bottom:0;"
+        placeholder="Artist name to narrow results…"
+        autocomplete="off" spellcheck="false"
+        oninput="updateTitleSearch()" />
+    </div>
+
+    <label for="history">Context for recommendations</label>
+    <textarea id="history" rows="5"
+      placeholder="e.g.
 - Watched Inception and loved it
 - Read Dune, really enjoyed the world-building
 - Listened to a lot of Radiohead lately
 - Watched The Bear on Hulu, loved the pacing
 - Played The Last of Us, loved the story"></textarea>
 
-  <div class="rating-row">
-    <label for="rating">How much did you enjoy these overall?</label>
-    <select id="rating">
-      <option value="1">1 — Didn't really enjoy it</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5" selected>5 — It was okay</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-      <option value="9">9</option>
-      <option value="10">10 — Absolutely loved it</option>
-    </select>
+    <div class="form-row">
+      <div>
+        <label for="media-type">Media type</label>
+        <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields(); toggleTitleArtist(); updateTitleSearch()">
+          <option value="">— Select —</option>
+          <option value="Film">Film</option>
+          <option value="Television Series">Television Series</option>
+          <option value="Game">Game</option>
+          <option value="Song">Song</option>
+          <option value="Album">Album</option>
+          <option value="Book">Book</option>
+        </select>
+
+      </div>
+      <div>
+        <label for="entry-status">Status</label>
+        <select id="entry-status">
+          <option value="completed" selected>Completed</option>
+          <option value="in-progress">In Progress</option>
+          <option value="not-started">Not Started</option>
+          <option value="dropped">Dropped</option>
+          <option value="">— None —</option>
+        </select>
+      </div>
+      <div id="main-date-single">
+        <label for="record-date">Date of record</label>
+        <input type="date" id="record-date" />
+      </div>
+      <div id="main-date-start" style="display:none;">
+        <label for="start-date">Start date</label>
+        <input type="date" id="start-date" />
+      </div>
+      <div id="main-date-end" style="display:none;">
+        <label for="end-date">End date</label>
+        <input type="date" id="end-date" />
+      </div>
+      <div>
+        <label for="rating">Enjoyment</label>
+        <select id="rating">
+          <option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="4">4</option>
+          <option value="5" selected>5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option>
+          <option value="9">9</option><option value="10">10</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="review" style="margin-top:12px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+    <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
+
+    <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
+    <p id="status"></p>
+    <div id="results"></div>
   </div>
 
-  <div class="key-row">
-    <input type="password" id="api-key" placeholder="Paste your Anthropic API key here (sk-ant-...)" />
+  <!-- ── Log view ── -->
+  <div id="view-log" style="display:none;">
+    <div class="log-header">
+      <h2>Media Log</h2>
+      <div class="log-actions">
+        <button class="btn-add" onclick="toggleAddForm()">+ Add</button>
+        <button class="btn-secondary" id="collapse-all-btn" onclick="toggleAllEntries()">Collapse all</button>
+        <button class="btn-secondary" onclick="exportCSV()">Export CSV</button>
+        <button class="btn-danger" onclick="clearLog()">Clear log</button>
+      </div>
+    </div>
+
+    <div class="manual-form" id="manual-form" style="display:none;">
+      <label for="manual-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+      <input type="text" id="manual-title" class="title-input" placeholder="e.g. Parasite, The Road, Hollow Knight" style="margin-bottom:10px;" />
+
+      <label for="manual-history">Notes</label>
+      <textarea id="manual-history" rows="3" placeholder="e.g.&#10;- Watched Parasite&#10;- Read The Road&#10;- Played Hollow Knight"></textarea>
+      <div class="manual-form-row">
+        <div>
+          <label for="manual-type">Media type</label>
+          <select id="manual-type" onchange="updateSelectColor(this); toggleManualDateFields()">
+            <option value="">— Select —</option>
+            <option value="Film">Film</option>
+            <option value="Television Series">Television Series</option>
+            <option value="Game">Game</option>
+            <option value="Song">Song</option>
+            <option value="Album">Album</option>
+            <option value="Book">Book</option>
+          </select>
+
+        </div>
+        <div>
+          <label for="manual-status">Status</label>
+          <select id="manual-status">
+            <option value="completed" selected>Completed</option>
+            <option value="in-progress">In Progress</option>
+            <option value="not-started">Not Started</option>
+            <option value="dropped">Dropped</option>
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div id="manual-date-single">
+          <label for="manual-date">Date of record</label>
+          <input type="date" id="manual-date" />
+        </div>
+        <div id="manual-date-start" style="display:none;">
+          <label for="manual-start-date">Start date</label>
+          <input type="date" id="manual-start-date" />
+        </div>
+        <div id="manual-date-end" style="display:none;">
+          <label for="manual-end-date">End date</label>
+          <input type="date" id="manual-end-date" />
+        </div>
+        <div>
+          <label for="manual-rating">Enjoyment</label>
+          <select id="manual-rating">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5" selected>5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option>
+            <option value="9">9</option><option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <label for="manual-review" style="margin-top:10px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
+      <textarea id="manual-review" rows="3" placeholder="Write a short review…"></textarea>
+      <div class="manual-form-btns">
+        <button onclick="addManualEntry()">Save entry</button>
+        <button class="btn-form-cancel" onclick="toggleAddForm()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="log-filters">
+      <select id="filter-type" onchange="currentFilterType=this.value;renderLog()">
+        <option value="">All Types</option>
+        <option value="Film">Film</option>
+        <option value="Television Series">Television Series</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+        <option value="Album">Album</option>
+        <option value="Book">Book</option>
+      </select>
+      <select id="filter-status" onchange="currentFilterStatus=this.value;renderLog()">
+        <option value="">All Statuses</option>
+        <option value="completed">Completed</option>
+        <option value="in-progress">In Progress</option>
+        <option value="not-started">Not Started</option>
+        <option value="dropped">Dropped</option>
+      </select>
+      <select id="sort-by" onchange="currentSortBy=this.value;renderLog()">
+        <option value="date-desc">Newest</option>
+        <option value="date-asc">Oldest</option>
+        <option value="rating-desc">Rating ↓</option>
+        <option value="rating-asc">Rating ↑</option>
+        <option value="type">Type</option>
+      </select>
+    </div>
+    <div id="log"></div>
   </div>
-  <p class="key-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. It stays in your browser only.</p>
 
-  <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
+  <!-- ── Detail view ── -->
+  <div id="view-detail" style="display:none;">
+    <button class="detail-back-btn" onclick="goBackFromDetail()">← Back</button>
 
-  <p id="status"></p>
-  <div id="results"></div>
+    <div class="detail-hero-card">
+      <div class="detail-hero-top" id="detail-hero-top">
+        <div class="detail-poster" id="detail-poster"></div>
+        <div class="detail-hero-info">
+          <div class="detail-meta" id="detail-meta"></div>
+          <div class="detail-title-row">
+            <h2 class="detail-title" id="detail-title"></h2>
+            <button class="detail-edit-title-btn" id="detail-edit-title-btn" onclick="startDetTitle()">Edit</button>
+          </div>
+          <div id="detail-title-edit" style="display:none;margin-top:6px;"></div>
+          <div id="detail-log-now-wrap"></div>
+        </div>
+      </div>
+      <div class="detail-hero-description" id="detail-description"></div>
+    </div>
+
+    <div class="detail-log-card" id="detail-log-card"></div>
+    <div id="detail-sugg-card"></div>
+  </div>
+
+  <!-- ── Stats view ── -->
+  <div id="view-stats" style="display:none;">
+    <h2>Stats</h2>
+    <div id="stats-content"></div>
+  </div>
 
   <script>
+    const LOG_KEY   = "jdrecs_log";
+    const THEME_KEY = "jdlogs_theme";
+
+    let currentDetailIndex     = null;
+    let currentDetailTitle     = null;
+    let currentDetailMediaType = null;
+    let currentBackView        = "home";
+    let searchTimer            = null;
+    let _wikiSearchResults     = [];
+
+    const TYPE_COLORS = {
+      "Film":              { bg: "#9aa0a8", border: "none" },
+      "Television Series": { bg: "#ff6b6b", border: "none" },
+      "Game":              { bg: "#4fa3f7", border: "none" },
+      "Song":              { bg: "#4ecb71", border: "none" },
+      "Album":             { bg: "#4ecb71", border: "none" },
+      "Book":              { bg: "#ff8c42", border: "none" },
+    };
+
+    const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
+    const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
+    function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
+    function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
+
+    const TYPE_PLURALS = {
+      "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
+      "Album": "Albums", "Video Game": "Video Games"
+    };
+    const TYPE_ORDER  = ["Movie", "TV Show", "Book", "Album", "Video Game"];
+    const RANGE_TYPES = new Set(["Book", "Game"]);
+
+    const collapsedEntries  = new Set();
+    const hiddenSuggestions = new Set();
+
+    let currentSortBy      = "date-desc";
+    let currentFilterType  = "";
+    let currentFilterStatus = "";
+
+    // ── Init ──
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("record-date").value       = today;
+    document.getElementById("start-date").value        = today;
+    document.getElementById("end-date").value          = today;
+    document.getElementById("manual-date").value       = today;
+    document.getElementById("manual-start-date").value = today;
+    document.getElementById("manual-end-date").value   = today;
+
+    (function applyTheme() {
+      if (localStorage.getItem(THEME_KEY) === "dark") {
+        document.body.classList.add("dark");
+        document.getElementById("theme-toggle").textContent = "☀ Light mode";
+      }
+    })();
+
+    // ── View routing ──
+    function showView(v, idx) {
+      ["home", "log", "detail", "stats"].forEach(name => {
+        document.getElementById(`view-${name}`).style.display = name === v ? "" : "none";
+      });
+      document.getElementById("nav-log-btn").classList.toggle("active", v === "log" || v === "detail");
+      document.getElementById("nav-stats-btn").classList.toggle("active", v === "stats");
+      if (v === "stats") renderStats();
+      if (v === "detail" && idx !== undefined) {
+        currentDetailIndex = idx;
+        currentDetailTitle = null;
+        currentBackView    = "log";
+        loadDetailView(idx);
+      }
+    }
+
+    // ── Nav badge ──
+    function updateNavBadge() {
+      const count = loadLog().length;
+      const badge = document.getElementById("nav-badge");
+      badge.textContent   = count;
+      badge.style.display = count > 0 ? "" : "none";
+    }
+
+    // ── Dark mode ──
+    function toggleDarkMode() {
+      const isDark = document.body.classList.toggle("dark");
+      localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+      document.getElementById("theme-toggle").textContent = isDark ? "☀ Light mode" : "☾ Dark mode";
+    }
+
+    // ── Date field toggles ──
+    function toggleMainDateFields() {
+      const isRange = RANGE_TYPES.has(document.getElementById("media-type").value);
+      document.getElementById("main-date-single").style.display = isRange ? "none" : "";
+      document.getElementById("main-date-start").style.display  = isRange ? "" : "none";
+      document.getElementById("main-date-end").style.display    = isRange ? "" : "none";
+    }
+
+    function toggleManualDateFields() {
+      const isRange = RANGE_TYPES.has(document.getElementById("manual-type").value);
+      document.getElementById("manual-date-single").style.display = isRange ? "none" : "";
+      document.getElementById("manual-date-start").style.display  = isRange ? "" : "none";
+      document.getElementById("manual-date-end").style.display    = isRange ? "" : "none";
+    }
+
+    const ARTIST_TYPES = new Set(["Song", "Album"]);
+
+    function toggleTitleArtist() {
+      const type = document.getElementById("media-type").value;
+      const row  = document.getElementById("title-artist-row");
+      if (!row) return;
+      if (ARTIST_TYPES.has(type)) {
+        row.classList.add("visible");
+      } else {
+        row.classList.remove("visible");
+        const inp = document.getElementById("entry-artist");
+        if (inp) inp.value = "";
+      }
+    }
+
+    function toggleSearchArtist() {
+      const type = document.getElementById("search-type").value;
+      const row  = document.getElementById("search-artist-row");
+      if (!row) return;
+      if (ARTIST_TYPES.has(type)) {
+        row.classList.add("visible");
+      } else {
+        row.classList.remove("visible");
+        const inp = document.getElementById("search-artist");
+        if (inp) inp.value = "";
+      }
+    }
+
+    // ── Select color ──
+    function updateSelectColor(el) {
+      const cfg = TYPE_COLORS[el.value];
+      if (cfg) {
+        el.style.background  = cfg.bg;
+        el.style.borderColor = cfg.bg;
+        el.style.color = "#fff";
+      } else {
+        el.style.background = el.style.borderColor = el.style.color = "";
+      }
+    }
+
+    function typeTagHTML(type) {
+      if (!type) return `<span style="font-size:11px;color:var(--text4);">No type</span>`;
+      if (type === "Film") {
+        return `<span class="type-tag" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);">Film</span>`;
+      }
+      const cfg = TYPE_COLORS[type] || { bg: "#888", border: "none" };
+      const border = cfg.border !== "none" ? `border:${cfg.border};` : "";
+      return `<span class="type-tag" style="background:${cfg.bg};${border}">${type}</span>`;
+    }
+
+    function statusBadgeHTML(status) {
+      if (!status) return "";
+      const labels = { "completed": "Completed", "in-progress": "In Progress", "not-started": "Not Started", "dropped": "Dropped" };
+      const label = labels[status];
+      if (!label) return "";
+      return `<span class="status-badge status-${status}">${label}</span>`;
+    }
+
+    // ── Helpers ──
+    function formatDate(iso) {
+      if (!iso) return "—";
+      return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function typeOptions(selected) {
+      return ["Film","Television Series","Game","Song","Album","Book"]
+        .map(t => `<option value="${t}"${t === selected ? " selected" : ""}>${t}</option>`).join("");
+    }
+
+    function ratingOptions(selected) {
+      return [1,2,3,4,5,6,7,8,9,10]
+        .map(n => `<option value="${n}"${n == selected ? " selected" : ""}>${n}</option>`).join("");
+    }
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1,3), 16);
+      const g = parseInt(hex.slice(3,5), 16);
+      const b = parseInt(hex.slice(5,7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function darkenHex(hex, factor) {
+      const r = Math.round(parseInt(hex.slice(1,3), 16) * factor);
+      const g = Math.round(parseInt(hex.slice(3,5), 16) * factor);
+      const b = Math.round(parseInt(hex.slice(5,7), 16) * factor);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function getEntryTitle(entry) {
+      if (entry.title) return entry.title;
+      const lines = (entry.history || "").split("\n").filter(l => l.trim());
+      if (!lines.length) return "Untitled";
+      return lines[0]
+        .replace(/^[-•*]\s*/, "")
+        .replace(/^(watched|read|played|listened to|saw|finished)\s+/i, "")
+        .replace(/\s+(and\s+.+|,\s*.+)$/i, "")
+        .trim() || "Untitled";
+    }
+
+    // ── Storage ──
+    function loadLog() {
+      try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, status) {
+      const entries = loadLog();
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: recs, status: status || "" });
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      renderLog();
+    }
+
+    function updateEntry(index, patch) {
+      const entries = loadLog();
+      if (entries[index]) Object.assign(entries[index], patch);
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      renderLog();
+      const detailEl = document.getElementById("view-detail");
+      if (currentDetailIndex === index && detailEl && detailEl.style.display !== "none") {
+        loadDetailView(index);
+      }
+    }
+
+    function removeEntry(index) {
+      if (!confirm("Remove this log entry?")) return;
+      const entries = loadLog();
+      const [removed] = entries.splice(index, 1);
+      collapsedEntries.delete(removed.date);
+      hiddenSuggestions.delete(removed.date);
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      currentDetailIndex = null;
+      showView("log");
+      renderLog();
+    }
+
+    // ── Collapse / suggestions ──
+    function toggleEntry(dateKey) {
+      collapsedEntries.has(dateKey) ? collapsedEntries.delete(dateKey) : collapsedEntries.add(dateKey);
+      renderLog();
+    }
+
+    function toggleAllEntries() {
+      const entries = loadLog();
+      const allCollapsed = entries.length > 0 && entries.every(e => collapsedEntries.has(e.date));
+      if (allCollapsed) collapsedEntries.clear();
+      else entries.forEach(e => collapsedEntries.add(e.date));
+      renderLog();
+    }
+
+    function toggleSuggestions(dateKey) {
+      hiddenSuggestions.has(dateKey) ? hiddenSuggestions.delete(dateKey) : hiddenSuggestions.add(dateKey);
+      renderLog();
+    }
+
+    // ── Render log list ──
+    function renderLog() {
+      const allEntries  = loadLog();
+      const container   = document.getElementById("log");
+      const collapseBtn = document.getElementById("collapse-all-btn");
+
+      updateNavBadge();
+
+      if (allEntries.length === 0) {
+        container.innerHTML = '<p class="log-empty">No entries yet — get some recommendations to start your log.</p>';
+        if (collapseBtn) collapseBtn.style.display = "none";
+        return;
+      }
+
+      if (collapseBtn) {
+        collapseBtn.style.display = "";
+        collapseBtn.textContent = allEntries.every(e => collapsedEntries.has(e.date)) ? "Expand all" : "Collapse all";
+      }
+
+      // Apply filter then sort, preserving original indices
+      let indexed = allEntries.map((entry, index) => ({ entry, index }));
+      if (currentFilterType)   indexed = indexed.filter(({ entry }) => entry.mediaType === currentFilterType);
+      if (currentFilterStatus) indexed = indexed.filter(({ entry }) => (entry.status || "") === currentFilterStatus);
+      indexed.sort((a, b) => {
+        switch (currentSortBy) {
+          case "date-asc":    return new Date(a.entry.date) - new Date(b.entry.date);
+          case "rating-desc": return (parseInt(b.entry.rating) || 0) - (parseInt(a.entry.rating) || 0);
+          case "rating-asc":  return (parseInt(a.entry.rating) || 0) - (parseInt(b.entry.rating) || 0);
+          case "type":        return (a.entry.mediaType || "").localeCompare(b.entry.mediaType || "");
+          default:            return new Date(b.entry.date) - new Date(a.entry.date);
+        }
+      });
+
+      if (indexed.length === 0) {
+        container.innerHTML = '<p class="log-empty">No entries match the current filters.</p>';
+        return;
+      }
+
+      container.innerHTML = indexed.map(({ entry, index }) => {
+        const isCollapsed  = collapsedEntries.has(entry.date);
+        const isSuggHidden = hiddenSuggestions.has(entry.date);
+        const recs         = entry.recommendations || [];
+        const dateKey      = entry.date;
+        const isRange      = RANGE_TYPES.has(entry.mediaType);
+        const nowIso       = new Date().toISOString().slice(0, 10);
+        const displayTitle = getEntryTitle(entry);
+
+        // Poster
+        const rawAccentP = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+        const posterAccent = rawAccentP === "#ffffff" ? "#9aa0a8" : rawAccentP;
+        const posterInitial = displayTitle.charAt(0).toUpperCase();
+        const posterHTML = entry.thumbnailUrl
+          ? `<div class="entry-poster"><img src="${entry.thumbnailUrl}" alt=""></div>`
+          : `<div class="entry-poster"><div class="entry-poster-fallback" style="background:linear-gradient(160deg,${posterAccent},${darkenHex(posterAccent,0.52)})">${posterInitial}</div></div>`;
+
+        const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
+          year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+
+        let datesHTML;
+        if (isRange) {
+          const startDisplay = entry.startDate ? formatDate(entry.startDate) : "Not set";
+          const endDisplay   = entry.endDate   ? formatDate(entry.endDate)   : "Not set";
+          datesHTML = `
+            <span class="log-entry-logged">Logged: ${loggedDate}</span>
+            <span class="log-entry-record" id="dates-display-${index}">
+              Started: ${startDisplay} &rarr; Finished: ${endDisplay}
+              <button class="btn-inline muted" onclick="startEditDates(${index})">Edit</button>
+            </span>
+            <span class="inline-edit" id="dates-edit-${index}" style="display:none;">
+              <span class="date-range-label">Start</span>
+              <input type="date" id="start-input-${index}" value="${entry.startDate || nowIso}" />
+              <span class="date-range-label">End</span>
+              <input type="date" id="end-input-${index}" value="${entry.endDate || nowIso}" />
+              <button class="btn-isave"  onclick="saveEditDates(${index}, true)">Save</button>
+              <button class="btn-icancel" onclick="cancelEditDates(${index})">Cancel</button>
+            </span>`;
+        } else {
+          const recordDisplay = entry.recordDate ? formatDate(entry.recordDate) : "Not set";
+          datesHTML = `
+            <span class="log-entry-logged">Logged: ${loggedDate}</span>
+            <span class="log-entry-record" id="dates-display-${index}">
+              Record date: ${recordDisplay}
+              <button class="btn-inline muted" onclick="startEditDates(${index})">Edit</button>
+            </span>
+            <span class="inline-edit" id="dates-edit-${index}" style="display:none;">
+              <input type="date" id="record-input-${index}" value="${entry.recordDate || nowIso}" />
+              <button class="btn-isave"  onclick="saveEditDates(${index}, false)">Save</button>
+              <button class="btn-icancel" onclick="cancelEditDates(${index})">Cancel</button>
+            </span>`;
+        }
+
+        const grouped = {};
+        for (const r of recs) {
+          if (!grouped[r.type]) grouped[r.type] = [];
+          grouped[r.type].push(r);
+        }
+        const sortedTypes = Object.keys(grouped).sort((a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b));
+        const groupsHTML  = sortedTypes.map(type => `
+          <div class="log-type-group">
+            <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
+            ${grouped[type].map(r => `
+              <div class="log-item">
+                <span class="log-item-title">${r.title}</span>
+                <span class="log-item-reason"> — ${r.reason}</span>
+              </div>`).join("")}
+          </div>`).join("");
+
+        const reviewDisplay = entry.review
+          ? `<div class="log-entry-review-label">Review</div>
+             <div class="log-entry-review-text">${entry.review}</div>
+             <button class="btn-inline muted" onclick="startEditReview(${index})">Edit</button>`
+          : `<button class="btn-inline muted" onclick="startEditReview(${index})">+ Add review</button>`;
+
+        const bodyHTML = isCollapsed ? "" : `
+          <div class="log-entry-body">
+            <div class="log-history">${entry.history}</div>
+            <div style="margin-bottom:10px;">
+              <div id="review-display-${index}">${reviewDisplay}</div>
+              <div id="review-edit-${index}" style="display:none;flex-direction:column;gap:4px;">
+                <textarea id="review-textarea-${index}" class="log-review-edit-area" rows="3">${entry.review || ""}</textarea>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn-isave"  onclick="saveEditReview(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelEditReview(${index})">Cancel</button>
+                </div>
+              </div>
+            </div>
+            ${recs.length > 0 ? `
+              <div class="sugg-header">
+                <span class="sugg-label">Suggestions</span>
+                <button class="btn-inline muted" onclick="toggleSuggestions('${dateKey}')">
+                  ${isSuggHidden ? "Show suggestions" : "Hide suggestions"}
+                </button>
+              </div>
+              ${isSuggHidden ? "" : `<div>${groupsHTML}</div>`}
+            ` : ""}
+          </div>`;
+
+        return `
+          <div class="log-entry" id="entry-${index}">
+            <div class="log-entry-meta">
+              ${posterHTML}
+              <div class="log-entry-left">
+                <div class="log-entry-top">
+                  <button class="btn-chevron" onclick="toggleEntry('${dateKey}')">${isCollapsed ? "▸" : "▾"}</button>
+                  ${typeTagHTML(entry.mediaType)}
+                  ${statusBadgeHTML(entry.status || "")}
+                  <button class="entry-title-btn" onclick="showView('detail', ${index})">${displayTitle}</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span id="type-display-${index}" style="display:inline-flex;align-items:center;gap:4px;">
+                    <button class="btn-inline muted" onclick="startEditType(${index})">Edit type</button>
+                  </span>
+                  <span class="inline-edit" id="type-edit-${index}" style="display:none;">
+                    <select id="type-select-${index}" onchange="updateSelectColor(this)" style="font-size:12px;padding:3px 7px;">
+                      <option value="">— Select —</option>${typeOptions(entry.mediaType || "")}
+                    </select>
+                    <button class="btn-isave"  onclick="saveEditType(${index})">Save</button>
+                    <button class="btn-icancel" onclick="cancelEditType(${index})">Cancel</button>
+                  </span>
+                </div>
+                ${isCollapsed ? `<span class="log-entry-logged">Logged: ${loggedDate}</span>` : datesHTML}
+              </div>
+              <div class="log-entry-right">
+                <div class="log-entry-rating-wrap" id="rating-display-${index}">
+                  <span class="log-entry-rating">Enjoyed: ${entry.rating}/10</span>
+                  <button class="btn-inline muted" style="text-align:right;" onclick="startEditRating(${index})">Edit</button>
+                </div>
+                <span class="inline-edit" id="rating-edit-${index}" style="display:none;flex-direction:column;align-items:flex-end;gap:4px;">
+                  <select id="rating-select-${index}" style="font-size:12px;padding:3px 7px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);">
+                    ${ratingOptions(entry.rating)}
+                  </select>
+                  <div style="display:flex;gap:4px;">
+                    <button class="btn-isave"  onclick="saveEditRating(${index})">Save</button>
+                    <button class="btn-icancel" onclick="cancelEditRating(${index})">Cancel</button>
+                  </div>
+                </span>
+                <button class="btn-inline danger" onclick="removeEntry(${index})">Remove</button>
+              </div>
+            </div>
+            ${bodyHTML}
+          </div>`;
+      }).join("");
+
+      indexed.forEach(({ index }) => {
+        const sel = document.getElementById(`type-select-${index}`);
+        if (sel && sel.parentElement.style.display !== "none") updateSelectColor(sel);
+      });
+    }
+
+    // ── Type edit ──
+    function startEditType(index) {
+      document.getElementById(`type-display-${index}`).style.display = "none";
+      document.getElementById(`type-edit-${index}`).style.display = "flex";
+      const sel = document.getElementById(`type-select-${index}`);
+      if (sel) updateSelectColor(sel);
+    }
+    function saveEditType(index) { updateEntry(index, { mediaType: document.getElementById(`type-select-${index}`).value }); }
+    function cancelEditType(index) {
+      document.getElementById(`type-display-${index}`).style.display = "inline-flex";
+      document.getElementById(`type-edit-${index}`).style.display = "none";
+    }
+
+    // ── Date edit ──
+    function startEditDates(index) {
+      document.getElementById(`dates-display-${index}`).style.display = "none";
+      document.getElementById(`dates-edit-${index}`).style.display = "flex";
+    }
+    function saveEditDates(index, isRange) {
+      const patch = isRange
+        ? { startDate: document.getElementById(`start-input-${index}`).value, endDate: document.getElementById(`end-input-${index}`).value }
+        : { recordDate: document.getElementById(`record-input-${index}`).value };
+      updateEntry(index, patch);
+    }
+    function cancelEditDates(index) {
+      document.getElementById(`dates-display-${index}`).style.display = "flex";
+      document.getElementById(`dates-edit-${index}`).style.display = "none";
+    }
+
+    // ── Rating edit ──
+    function startEditRating(index) {
+      document.getElementById(`rating-display-${index}`).style.display = "none";
+      document.getElementById(`rating-edit-${index}`).style.display = "flex";
+    }
+    function saveEditRating(index) { updateEntry(index, { rating: document.getElementById(`rating-select-${index}`).value }); }
+    function cancelEditRating(index) {
+      document.getElementById(`rating-display-${index}`).style.display = "flex";
+      document.getElementById(`rating-edit-${index}`).style.display = "none";
+    }
+
+    // ── Review edit ──
+    function startEditReview(index) {
+      document.getElementById(`review-display-${index}`).style.display = "none";
+      document.getElementById(`review-edit-${index}`).style.display = "flex";
+      document.getElementById(`review-textarea-${index}`).focus();
+    }
+    function saveEditReview(index) { updateEntry(index, { review: document.getElementById(`review-textarea-${index}`).value.trim() }); }
+    function cancelEditReview(index) {
+      document.getElementById(`review-display-${index}`).style.display = "";
+      document.getElementById(`review-edit-${index}`).style.display = "none";
+    }
+
+    // ── Detail view ──
+    async function loadDetailView(index) {
+      const entries = loadLog();
+      const entry   = entries[index];
+      if (!entry) { showView("log"); return; }
+
+      const title   = getEntryTitle(entry);
+      const isRange = RANGE_TYPES.has(entry.mediaType);
+      const rawAccent = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+      const accent  = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
+
+      // Hero gradient
+      document.getElementById("detail-hero-top").style.background =
+        `linear-gradient(135deg, ${hexToRgba(accent, 0.22)} 0%, ${hexToRgba(accent, 0.05)} 100%)`;
+
+      // Poster
+      const posterEl = document.getElementById("detail-poster");
+      const initial  = title.charAt(0).toUpperCase();
+      if (entry.thumbnailUrl) {
+        posterEl.innerHTML = `<img src="${entry.thumbnailUrl}" alt="">`;
+      } else {
+        posterEl.innerHTML = `<div class="poster-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
+      }
+
+      // Meta: type tag + wiki link
+      const wikiUrl = entry.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
+      document.getElementById("detail-meta").innerHTML =
+        `${typeTagHTML(entry.mediaType)}
+         <a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+
+      // Title
+      document.getElementById("detail-title").textContent = title;
+      document.getElementById("detail-title").style.display = "";
+      document.getElementById("detail-edit-title-btn").style.display = "";
+      document.getElementById("detail-title-edit").style.display = "none";
+      document.getElementById("detail-log-now-wrap").innerHTML =
+        `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>`;
+
+      // Description
+      const descEl = document.getElementById("detail-description");
+      if (entry.description !== undefined) {
+        if (entry.description) {
+          descEl.textContent = entry.description;
+          descEl.className   = "detail-hero-description";
+          descEl.style.display = "";
+        } else {
+          descEl.style.display = "none";
+        }
+      } else {
+        descEl.textContent   = "Fetching description…";
+        descEl.className     = "detail-hero-description dim";
+        descEl.style.display = "";
+        fetchAndStoreWiki(index, title);
+      }
+
+      // User log data
+      renderDetailLog(entry, index, isRange);
+
+      // Suggestions
+      const recs = entry.recommendations || [];
+      const suggCard = document.getElementById("detail-sugg-card");
+      if (recs.length > 0) {
+        const grouped = {};
+        for (const r of recs) { if (!grouped[r.type]) grouped[r.type] = []; grouped[r.type].push(r); }
+        const sortedTypes = Object.keys(grouped).sort((a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b));
+        const groupsHTML  = sortedTypes.map(type => `
+          <div class="log-type-group">
+            <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
+            ${grouped[type].map(r => `
+              <div class="log-item">
+                <span class="log-item-title">${r.title}</span>
+                <span class="log-item-reason"> — ${r.reason}</span>
+              </div>`).join("")}
+          </div>`).join("");
+        suggCard.innerHTML = `
+          <div class="detail-log-card">
+            <div class="detail-log-card-header">Suggestions from this session</div>
+            <div style="padding:12px 16px;">${groupsHTML}</div>
+          </div>`;
+      } else {
+        suggCard.innerHTML = "";
+      }
+    }
+
+    function renderDetailLog(entry, index, isRange) {
+      const nowIso = new Date().toISOString().slice(0, 10);
+      const rating = parseInt(entry.rating) || 0;
+      const dots   = Array.from({length: 10}, (_, i) =>
+        `<span class="rating-dot ${i < rating ? "filled" : "empty"}"></span>`).join("");
+
+      let datesDisplay, datesEditHTML;
+      if (isRange) {
+        datesDisplay = `${entry.startDate ? formatDate(entry.startDate) : "—"} → ${entry.endDate ? formatDate(entry.endDate) : "—"}`;
+        datesEditHTML = `
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;min-width:34px;">Start</span>
+              <input type="date" id="det-start" class="det-inline-input" value="${entry.startDate || nowIso}">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;min-width:34px;">End</span>
+              <input type="date" id="det-end" class="det-inline-input" value="${entry.endDate || nowIso}">
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-isave" onclick="saveDetDates(${index},true)">Save</button>
+              <button class="btn-icancel" onclick="cancelDetField('det-dates-display','det-dates-edit')">Cancel</button>
+            </div>
+          </div>`;
+      } else {
+        datesDisplay = entry.recordDate ? formatDate(entry.recordDate) : "—";
+        datesEditHTML = `
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <input type="date" id="det-record" class="det-inline-input" value="${entry.recordDate || nowIso}">
+            <button class="btn-isave" onclick="saveDetDates(${index},false)">Save</button>
+            <button class="btn-icancel" onclick="cancelDetField('det-dates-display','det-dates-edit')">Cancel</button>
+          </div>`;
+      }
+
+      const loggedDate = new Date(entry.date).toLocaleDateString("en-US", {
+        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+
+      const statusOptions = [
+        { v: "completed",   l: "Completed"   },
+        { v: "in-progress", l: "In Progress" },
+        { v: "not-started", l: "Not Started" },
+        { v: "dropped",     l: "Dropped"     },
+        { v: "",            l: "— None —"    }
+      ].map(o => `<option value="${o.v}"${(entry.status||"") === o.v ? " selected" : ""}>${o.l}</option>`).join("");
+
+      document.getElementById("detail-log-card").innerHTML = `
+        <div class="detail-log-card-header">Your log</div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div>
+              <div class="detail-field-label">Status</div>
+              <div id="det-status-display">
+                ${entry.status ? statusBadgeHTML(entry.status) : `<span style="font-size:12px;color:var(--text4);font-style:italic;">Not set</span>`}
+              </div>
+              <div id="det-status-edit" style="display:none;margin-top:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <select id="det-status-select" class="det-inline-input">${statusOptions}</select>
+                  <button class="btn-isave" onclick="saveDetStatus(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelDetField('det-status-display','det-status-edit')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-status-display','det-status-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div>
+              <div class="detail-field-label">Rating</div>
+              <div id="det-rating-display">
+                <div class="rating-big">${rating}/10</div>
+                <div class="rating-dots">${dots}</div>
+              </div>
+              <div id="det-rating-edit" style="display:none;margin-top:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <select id="det-rating-select" class="det-inline-input">${ratingOptions(entry.rating)}</select>
+                  <button class="btn-isave" onclick="saveDetRating(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelDetField('det-rating-display','det-rating-edit')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-rating-display','det-rating-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div style="flex:1;min-width:0;margin-right:8px;">
+              <div class="detail-field-label">Review</div>
+              <div id="det-review-display">
+                ${entry.review
+                  ? `<div class="detail-field-value" style="white-space:pre-wrap;line-height:1.6;">${entry.review}</div>`
+                  : `<div style="font-size:12px;color:var(--text4);font-style:italic;">No review yet</div>`}
+              </div>
+              <div id="det-review-edit" style="display:none;margin-top:6px;">
+                <textarea id="det-review-textarea" class="log-review-edit-area" rows="4">${entry.review || ""}</textarea>
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                  <button class="btn-isave" onclick="saveDetReview(${index})">Save</button>
+                  <button class="btn-icancel" onclick="cancelDetField('det-review-display','det-review-edit')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-review-display','det-review-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row">
+          <div class="detail-row-header">
+            <div>
+              <div class="detail-field-label">Date${isRange ? "s" : ""}</div>
+              <div id="det-dates-display">
+                <div class="detail-field-value">${datesDisplay}</div>
+              </div>
+              <div id="det-dates-edit" style="display:none;">${datesEditHTML}</div>
+            </div>
+            <button class="btn-inline muted" onclick="startDetField('det-dates-display','det-dates-edit')">Edit</button>
+          </div>
+        </div>
+
+        <div class="detail-log-row" style="border-bottom:none;">
+          <div class="detail-field-label">Logged</div>
+          <div class="detail-field-value" style="color:var(--text3);">${loggedDate}</div>
+          ${entry.history ? `<div class="log-history" style="margin:8px 0 0;">${entry.history}</div>` : ""}
+        </div>
+      `;
+    }
+
+    // Generic show/hide for detail edit fields
+    function startDetField(displayId, editId) {
+      document.getElementById(displayId).style.display = "none";
+      document.getElementById(editId).style.display    = "";
+    }
+    function cancelDetField(displayId, editId) {
+      document.getElementById(displayId).style.display = "";
+      document.getElementById(editId).style.display    = "none";
+    }
+
+    // Detail save functions
+    function saveDetRating(index)  { updateEntry(index, { rating:  document.getElementById("det-rating-select").value }); }
+    function saveDetReview(index)  { updateEntry(index, { review:  document.getElementById("det-review-textarea").value.trim() }); }
+    function saveDetStatus(index)  { updateEntry(index, { status:  document.getElementById("det-status-select").value }); }
+    function saveDetDates(index, isRange) {
+      const patch = isRange
+        ? { startDate: document.getElementById("det-start").value, endDate: document.getElementById("det-end").value }
+        : { recordDate: document.getElementById("det-record").value };
+      updateEntry(index, patch);
+    }
+
+    // Detail title edit
+    function startDetTitle() {
+      const current = document.getElementById("detail-title").textContent;
+      document.getElementById("detail-title").style.display          = "none";
+      document.getElementById("detail-edit-title-btn").style.display = "none";
+      const editDiv = document.getElementById("detail-title-edit");
+      editDiv.style.display = "";
+      editDiv.innerHTML = `
+        <input type="text" id="det-title-input" class="det-inline-input"
+          value="${current.replace(/"/g,'&quot;')}"
+          style="width:100%;font-size:15px;font-weight:600;box-sizing:border-box;margin-bottom:6px;">
+        <div style="display:flex;gap:6px;">
+          <button class="btn-isave" onclick="saveDetTitle(${currentDetailIndex})">Save</button>
+          <button class="btn-icancel" onclick="cancelDetTitle()">Cancel</button>
+        </div>`;
+      document.getElementById("det-title-input").focus();
+    }
+    function saveDetTitle(index)  { updateEntry(index, { title: document.getElementById("det-title-input").value.trim() }); }
+    function cancelDetTitle() {
+      document.getElementById("detail-title").style.display          = "";
+      document.getElementById("detail-edit-title-btn").style.display = "";
+      document.getElementById("detail-title-edit").style.display     = "none";
+    }
+
+    // ── Wikipedia fetch ──
+    async function fetchWikipediaData(title) {
+      try {
+        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+          headers: { "Accept": "application/json" }
+        });
+        if (!res.ok) return null;
+        const d = await res.json();
+        return {
+          extract:  d.extract  || null,
+          thumbnail: d.thumbnail?.source || null,
+          pageUrl:   d.content_urls?.desktop?.page || null
+        };
+      } catch { return null; }
+    }
+
+    async function fetchAndStoreWiki(index, title) {
+      const wiki  = await fetchWikipediaData(title);
+      const patch = wiki
+        ? { description: wiki.extract || "", thumbnailUrl: wiki.thumbnail || null, wikiUrl: wiki.pageUrl || null }
+        : { description: "" };
+      updateEntry(index, patch);
+    }
+
+    // ── Manual add ──
+    function toggleAddForm() {
+      const form    = document.getElementById("manual-form");
+      const visible = form.style.display !== "none";
+      form.style.display = visible ? "none" : "block";
+      if (!visible) {
+        const t = new Date().toISOString().slice(0, 10);
+        document.getElementById("manual-title").value       = "";
+        document.getElementById("manual-history").value     = "";
+        document.getElementById("manual-rating").value      = "5";
+        document.getElementById("manual-date").value        = t;
+        document.getElementById("manual-start-date").value  = t;
+        document.getElementById("manual-end-date").value    = t;
+        document.getElementById("manual-review").value      = "";
+        document.getElementById("manual-status").value      = "completed";
+        const sel = document.getElementById("manual-type");
+        sel.value = "";
+        updateSelectColor(sel);
+        toggleManualDateFields();
+      }
+    }
+
+    function addManualEntry() {
+      const history = document.getElementById("manual-history").value.trim();
+      if (!history) { alert("Please add some notes first."); return; }
+      const title     = document.getElementById("manual-title").value.trim();
+      const mediaType = document.getElementById("manual-type").value;
+      const isRange   = RANGE_TYPES.has(mediaType);
+      const recordDate  = isRange ? null : document.getElementById("manual-date").value;
+      const startDate   = isRange ? document.getElementById("manual-start-date").value : null;
+      const endDate     = isRange ? document.getElementById("manual-end-date").value   : null;
+      const rating      = document.getElementById("manual-rating").value;
+      const review      = document.getElementById("manual-review").value.trim();
+      const status      = document.getElementById("manual-status").value;
+      const entries = loadLog();
+      entries.unshift({ date: new Date().toISOString(), title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true, status: status || "" });
+      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      toggleAddForm();
+      renderLog();
+    }
+
+    // ── Export ──
+    function exportCSV() {
+      const entries = loadLog();
+      if (entries.length === 0) { alert("No log entries to export."); return; }
+      const rows = [["Title","Logged Date","Record Date","Start Date","End Date","Media Type","Rating","Review","Rec Type","Rec Title","Reason","History"]];
+      for (const entry of entries) {
+        const title  = getEntryTitle(entry);
+        const logged = new Date(entry.date).toLocaleString();
+        const recs   = entry.recommendations || [];
+        const base   = [title, logged, entry.recordDate||"", entry.startDate||"", entry.endDate||"", entry.mediaType||"", entry.rating, entry.review||""];
+        if (recs.length === 0) {
+          rows.push([...base, "","","", entry.history.replace(/\n/g," ")]);
+        } else {
+          for (const r of recs) { rows.push([...base, r.type, r.title, r.reason, entry.history.replace(/\n/g," ")]); }
+        }
+      }
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const a = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })), download: "jdlogs.csv"
+      });
+      a.click();
+    }
+
+    function clearLog() {
+      if (!confirm("Clear your entire media log? This cannot be undone.")) return;
+      localStorage.removeItem(LOG_KEY);
+      collapsedEntries.clear();
+      hiddenSuggestions.clear();
+      currentDetailIndex = null;
+      renderLog();
+    }
+
+    // ── Get recommendations ──
     async function getRecommendations() {
-      const history = document.getElementById("history").value.trim();
-      const rating = document.getElementById("rating").value;
-      const apiKey = document.getElementById("api-key").value.trim();
-      const btn = document.getElementById("go-btn");
-      const status = document.getElementById("status");
-      const results = document.getElementById("results");
+      const title      = document.getElementById("entry-title").value.trim();
+      const history    = document.getElementById("history").value.trim();
+      const mediaType  = document.getElementById("media-type").value;
+      const entryStatus = document.getElementById("entry-status").value;
+      const isRange    = RANGE_TYPES.has(mediaType);
+      const recordDate = isRange ? null : document.getElementById("record-date").value;
+      const startDate  = isRange ? document.getElementById("start-date").value : null;
+      const endDate    = isRange ? document.getElementById("end-date").value   : null;
+      const rating     = document.getElementById("rating").value;
+      const apiKey     = getAnthropicKey();
+      const btn        = document.getElementById("go-btn");
+      const status     = document.getElementById("status");
+      const results    = document.getElementById("results");
 
-      if (!history) {
-        status.textContent = "Please describe some things you've watched, read, or listened to.";
-        return;
-      }
-
-      if (!apiKey || !apiKey.startsWith("sk-")) {
-        status.textContent = "Please paste your API key above (starts with sk-ant-...).";
-        return;
-      }
+      if (!history) { status.textContent = "Please describe some things you've watched, read, or listened to."; return; }
+      if (!apiKey || !apiKey.startsWith("sk-")) { status.textContent = "Add your Anthropic API key in ⚙ Settings first."; return; }
 
       btn.disabled = true;
       status.textContent = "Thinking...";
       results.innerHTML = "";
 
+      // Build log summary (up to 20 most recent entries)
+      const logEntries = loadLog();
+      let logSummary = "";
+      if (logEntries.length > 0) {
+        logSummary = logEntries.slice(0, 20).map(e => {
+          const t = getEntryTitle(e);
+          const r = e.rating ? `${e.rating}/10` : "unrated";
+          const s = e.status || "completed";
+          return `${e.mediaType || "Media"}: "${t}" - ${r} (${s})`;
+        }).join("\n");
+      }
+
+      const contextSection = logSummary
+        ? `The user's full media log:\n${logSummary}\n\nWhat they just described/logged:\n${history}`
+        : history;
+
       const prompt = `You are a personalized media recommendation agent.
 
 The user has shared their recent viewing, reading, and listening history:
 
-${history}
+${contextSection}
 
 The user rated their overall enjoyment of this content: ${rating}/10.
 
 Based on this, recommend exactly 5 things they haven't seen/read/heard yet.
-Mix media types if it fits (movies, shows, books, albums, podcasts, video games).
+Mix media types if it fits (movies, shows, books, albums, video games).
 
 Return ONLY a JSON array with exactly 5 objects. No extra text, no markdown, just raw JSON.
 Each object must have:
 - "title": the name of the work
-- "type": one of "Movie", "TV Show", "Book", "Album", "Podcast", or "Video Game"
+- "type": one of "Movie", "TV Show", "Book", "Album", or "Video Game"
 - "reason": one sentence explaining why they'd love it based on their history
 
 Example format:
@@ -270,11 +1939,7 @@ Example format:
             "anthropic-version": "2023-06-01",
             "anthropic-dangerous-direct-browser-access": "true"
           },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 1000,
-            messages: [{ role: "user", content: prompt }]
-          })
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1000, messages: [{ role: "user", content: prompt }] })
         });
 
         if (!response.ok) {
@@ -283,24 +1948,26 @@ Example format:
         }
 
         const data = await response.json();
-        const text = data.content[0].text.trim();
-
         let recs;
         try {
-          const clean = text.replace(/```json|```/g, "").trim();
-          recs = JSON.parse(clean);
+          recs = JSON.parse(data.content[0].text.trim().replace(/```json|```/g, "").trim());
         } catch {
           throw new Error("Couldn't parse the response. Try again.");
         }
 
         status.textContent = "";
-        results.innerHTML = recs.map((r, i) => `
-          <div class="result-card">
-            <div class="result-number">#${i + 1} &mdash; ${r.type}</div>
-            <div class="result-title">${r.title}</div>
-            <div class="result-reason">${r.reason}</div>
-          </div>
-        `).join("");
+        results.innerHTML = recs.map((r, i) => {
+          const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(r.title)}&go=Go`;
+          return `
+            <div class="result-card">
+              <div class="result-number">#${i + 1} &mdash; ${r.type}</div>
+              <div class="result-title"><a href="${wikiUrl}" target="_blank" rel="noopener noreferrer">${r.title}</a></div>
+              <div class="result-reason">${r.reason}</div>
+            </div>`;
+        }).join("");
+
+        const review = document.getElementById("review").value.trim();
+        saveToLog(title, history, mediaType, recordDate, startDate, endDate, rating, review, recs, entryStatus);
 
       } catch (err) {
         status.textContent = "";
@@ -309,6 +1976,521 @@ Example format:
         btn.disabled = false;
       }
     }
+
+    // ── Search (type-aware API routing) ──
+    function updateSearch() {
+      const q        = document.getElementById("search-input").value.trim();
+      const dropdown = document.getElementById("search-dropdown");
+      clearTimeout(searchTimer);
+      if (q.length < 2) { dropdown.style.display = "none"; return; }
+      dropdown.innerHTML = `<div class="search-loading">Searching…</div>`;
+      dropdown.style.display = "";
+      searchTimer = setTimeout(() => runSearch(q), 320);
+    }
+
+    async function runSearch(q) {
+      const dropdown = document.getElementById("search-dropdown");
+      const type     = document.getElementById("search-type").value;
+      const ql       = q.toLowerCase();
+      try {
+        // Log matches first
+        const entries    = loadLog();
+        const logMatches = entries
+          .map((e, i) => ({ title: getEntryTitle(e), subtitle: "", mediaType: e.mediaType, logIdx: i, fromLog: true }))
+          .filter(m => m.title.toLowerCase().includes(ql) && (!type || m.mediaType === type));
+
+        // API results
+        const searchArtist = (document.getElementById("search-artist")?.value || "").trim();
+        let apiRaw = [];
+        if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
+        else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
+        else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
+        else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
+        else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
+        else                                   apiRaw = await searchWikipedia(q);
+
+        // Dedup API results vs log
+        const logTitles  = new Set(logMatches.map(m => m.title.toLowerCase()));
+        const apiResults = apiRaw
+          .filter(r => !logTitles.has(r.title.toLowerCase()))
+          .map(r => ({ title: r.title, subtitle: r.subtitle || "", mediaType: type || null, logIdx: -1, fromLog: false }));
+
+        if (logMatches.length === 0 && apiResults.length === 0) {
+          _wikiSearchResults = [];
+          dropdown.innerHTML = `<div class="search-no-results">No results for "${q}"</div>`;
+          return;
+        }
+
+        _wikiSearchResults = [...logMatches, ...apiResults];
+
+        let html = "";
+        if (logMatches.length > 0) {
+          html += `<div class="search-section-label">Your log</div>`;
+          html += logMatches.map((_, i) => renderDropdownItem(i)).join("");
+        }
+        if (apiResults.length > 0) {
+          const label = type || "Online";
+          html += `<div class="search-section-label">${label}</div>`;
+          html += apiResults.map((_, i) => renderDropdownItem(logMatches.length + i)).join("");
+        }
+        dropdown.innerHTML = html;
+      } catch {
+        _wikiSearchResults = [];
+        dropdown.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
+      }
+    }
+
+    function renderDropdownItem(i) {
+      const item    = _wikiSearchResults[i];
+      const entries = loadLog();
+      const badge   = item.logIdx !== -1
+        ? typeTagHTML(entries[item.logIdx].mediaType)
+        : (item.mediaType ? typeTagHTML(item.mediaType) : "");
+      const sub = item.subtitle ? `<span class="search-result-sub">${item.subtitle}</span>` : "";
+      return `<div class="search-result-item" onclick="selectSearchResult(${i})">
+        <div class="search-result-left">
+          <span class="search-result-title">${item.title}</span>
+          ${sub}
+        </div>
+        ${badge}
+      </div>`;
+    }
+
+    async function searchTMDB(q, mediaType) {
+      const key = getTmdbKey();
+      if (!key) return [{ title: "Add your TMDB key on the home page to search Film & TV", subtitle: "" }];
+      const url = mediaType === "movie"
+        ? `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(q)}&api_key=${key}&page=1`
+        : `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(q)}&api_key=${key}&page=1`;
+      const res  = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.results || []).slice(0, 7).map(r => ({
+        title:    r.title || r.name || "",
+        subtitle: (r.release_date || r.first_air_date || "").slice(0, 4)
+      }));
+    }
+
+    async function searchOpenLibrary(q) {
+      const res  = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=7&fields=title,author_name`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.docs || []).slice(0, 7).map(r => ({
+        title:    r.title || "",
+        subtitle: (r.author_name || [])[0] || ""
+      }));
+    }
+
+    async function searchMusicBrainz(q, type, artist) {
+      const queryStr = artist ? `${q} AND artist:${artist}` : q;
+      const url = type === "release-group"
+        ? `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(queryStr)}&fmt=json&limit=7`
+        : `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(queryStr)}&fmt=json&limit=7`;
+      const res  = await fetch(url, { headers: { "User-Agent": "jdlogs/1.0 (personal media logger)" } });
+      if (!res.ok) return [];
+      const data = await res.json();
+      const items = type === "release-group" ? (data["release-groups"] || []) : (data.recordings || []);
+      return items.slice(0, 7).map(r => ({
+        title:    r.title || "",
+        subtitle: (r["artist-credit"] || []).map(a => a.artist?.name || "").filter(Boolean).join(", ")
+      }));
+    }
+
+    async function searchWikipedia(q) {
+      const res  = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=7&utf8=1`
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.query?.search || []).map(r => ({ title: r.title, subtitle: "" }));
+    }
+
+    function selectSearchResult(i) {
+      const item = _wikiSearchResults[i];
+      if (!item) return;
+      document.getElementById("search-input").value = "";
+      document.getElementById("search-dropdown").style.display = "none";
+      if (item.logIdx !== -1) {
+        currentBackView = "home";
+        showView("detail", item.logIdx);
+      } else {
+        showDetailForTitle(item.title, item.mediaType);
+      }
+    }
+
+    document.addEventListener("click", function(e) {
+      const wrap = document.getElementById("search-wrap");
+      if (!wrap.contains(e.target)) {
+        document.getElementById("search-dropdown").style.display = "none";
+      }
+      const titleInput = document.getElementById("entry-title");
+      const titleDrop  = document.getElementById("title-dropdown");
+      if (titleInput && !titleInput.parentElement.contains(e.target)) {
+        titleDrop.style.display = "none";
+      }
+    });
+
+    document.getElementById("search-input").addEventListener("keydown", function(e) {
+      if (e.key === "Escape") {
+        this.value = "";
+        document.getElementById("search-dropdown").style.display = "none";
+        this.blur();
+      }
+    });
+
+    // ── Detail for unlogged media (from search) ──
+    function showDetailForTitle(title, mediaType) {
+      currentDetailIndex     = null;
+      currentDetailTitle     = title;
+      currentDetailMediaType = mediaType || null;
+      currentBackView        = "home";
+      ["home", "log", "detail"].forEach(n =>
+        document.getElementById(`view-${n}`).style.display = n === "detail" ? "" : "none");
+      document.getElementById("nav-log-btn").classList.add("active");
+      loadDetailViewForTitle(title);
+    }
+
+    async function loadDetailViewForTitle(title) {
+      const initial = title.charAt(0).toUpperCase();
+
+      // Placeholder while fetching
+      document.getElementById("detail-hero-top").style.background =
+        `linear-gradient(135deg, rgba(136,136,136,0.15) 0%, rgba(136,136,136,0.04) 100%)`;
+      document.getElementById("detail-poster").innerHTML =
+        `<div class="poster-fallback" style="background:linear-gradient(160deg,#888,#444)">${initial}</div>`;
+      const knownType = currentDetailMediaType;
+      document.getElementById("detail-meta").innerHTML =
+        (knownType ? typeTagHTML(knownType) : "") +
+        `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go"
+            target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+      document.getElementById("detail-title").textContent      = title;
+      document.getElementById("detail-title").style.display    = "";
+      document.getElementById("detail-edit-title-btn").style.display = "none";
+      document.getElementById("detail-title-edit").style.display     = "none";
+      document.getElementById("detail-log-now-wrap").innerHTML =
+        `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>`;
+
+      const descEl = document.getElementById("detail-description");
+      descEl.textContent = "Fetching description…";
+      descEl.className   = "detail-hero-description dim";
+      descEl.style.display = "";
+
+      // Fetch Wikipedia
+      const wiki = await fetchWikipediaData(title);
+      if (wiki) {
+        if (wiki.extract) {
+          descEl.textContent = wiki.extract;
+          descEl.className   = "detail-hero-description";
+        } else { descEl.style.display = "none"; }
+
+        if (wiki.thumbnail) {
+          document.getElementById("detail-poster").innerHTML =
+            `<img src="${wiki.thumbnail}" alt="">`;
+        }
+        const wikiUrl = wiki.pageUrl ||
+          `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
+        document.getElementById("detail-meta").innerHTML =
+          `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+      } else { descEl.style.display = "none"; }
+
+      // Show log data if there's a matching entry
+      const entries = loadLog();
+      const logIdx  = entries.findIndex(e => getEntryTitle(e).toLowerCase() === title.toLowerCase());
+      if (logIdx !== -1) {
+        const entry   = entries[logIdx];
+        const isRange = RANGE_TYPES.has(entry.mediaType);
+        const rawAccent = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
+        const accent    = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
+        document.getElementById("detail-hero-top").style.background =
+          `linear-gradient(135deg, ${hexToRgba(accent, 0.22)} 0%, ${hexToRgba(accent, 0.05)} 100%)`;
+        // prepend type tag to meta
+        const metaEl = document.getElementById("detail-meta");
+        metaEl.innerHTML = typeTagHTML(entry.mediaType) + metaEl.innerHTML;
+        renderDetailLog(entry, logIdx, isRange);
+      } else {
+        document.getElementById("detail-log-card").innerHTML  = "";
+      }
+      // AI blurb card for unlogged titles
+      const suggCard = document.getElementById("detail-sugg-card");
+      suggCard.innerHTML = "";
+      const anthropicKey = getAnthropicKey();
+      const logForBlurb  = loadLog();
+      if (anthropicKey && anthropicKey.startsWith("sk-") && logForBlurb.length > 0) {
+        const blurbType = currentDetailMediaType || "";
+        suggCard.innerHTML = `
+          <div class="ai-blurb-card">
+            <div class="ai-blurb-header">
+              <span>Why you'd like it</span>
+              <button class="ai-blurb-btn" id="ai-blurb-btn" onclick="loadAIBlurb(${JSON.stringify(title)}, ${JSON.stringify(blurbType)})">Generate</button>
+            </div>
+            <div class="ai-blurb-body" id="ai-blurb-body" style="display:none;font-size:13px;color:var(--text2);line-height:1.75;padding:14px 16px;"></div>
+          </div>`;
+      }
+    }
+
+    // ── Log Now ──
+    function logNow() {
+      const title     = currentDetailTitle ||
+        (currentDetailIndex !== null ? getEntryTitle(loadLog()[currentDetailIndex]) : "");
+      const mediaType = currentDetailMediaType ||
+        (currentDetailIndex !== null ? loadLog()[currentDetailIndex]?.mediaType : "") || "";
+      showView("log");
+      const form = document.getElementById("manual-form");
+      form.style.display = "block";
+      const t = new Date().toISOString().slice(0, 10);
+      document.getElementById("manual-title").value       = title;
+      document.getElementById("manual-history").value     = "";
+      document.getElementById("manual-rating").value      = "5";
+      document.getElementById("manual-review").value      = "";
+      document.getElementById("manual-date").value        = t;
+      document.getElementById("manual-start-date").value  = t;
+      document.getElementById("manual-end-date").value    = t;
+      const sel = document.getElementById("manual-type");
+      sel.value = mediaType;
+      updateSelectColor(sel);
+      toggleManualDateFields();
+      form.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function goBackFromDetail() {
+      showView(currentBackView || "log");
+    }
+
+    // ── Title field autocomplete ──
+    let titleSearchTimer   = null;
+    let _titleSearchResults = [];
+
+    function updateTitleSearch() {
+      const q = (document.getElementById("entry-title")?.value || "").trim();
+      clearTimeout(titleSearchTimer);
+      const drop = document.getElementById("title-dropdown");
+      if (!drop) return;
+      if (q.length < 2) { drop.style.display = "none"; return; }
+      drop.innerHTML = `<div class="search-loading">Searching…</div>`;
+      drop.style.display = "";
+      titleSearchTimer = setTimeout(() => runTitleSearch(q), 320);
+    }
+
+    async function runTitleSearch(q) {
+      const drop   = document.getElementById("title-dropdown");
+      const type   = document.getElementById("media-type").value;
+      const artist = (document.getElementById("entry-artist")?.value || "").trim();
+      try {
+        let raw = [];
+        if      (type === "Film")              raw = await searchTMDB(q, "movie");
+        else if (type === "Television Series") raw = await searchTMDB(q, "tv");
+        else if (type === "Book")              raw = await searchOpenLibrary(q);
+        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
+        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
+        else                                   raw = await searchWikipedia(q);
+
+        _titleSearchResults = raw;
+        if (raw.length === 0) {
+          drop.innerHTML = `<div class="search-no-results">No results</div>`;
+          return;
+        }
+        drop.innerHTML = raw.map((r, i) => {
+          const sub = r.subtitle ? `<span class="search-result-sub">${r.subtitle}</span>` : "";
+          return `<div class="search-result-item" onclick="selectTitleResult(${i})">
+            <div class="search-result-left">
+              <span class="search-result-title">${r.title}</span>
+              ${sub}
+            </div>
+          </div>`;
+        }).join("");
+      } catch {
+        _titleSearchResults = [];
+        drop.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
+      }
+    }
+
+    function selectTitleResult(i) {
+      const item = _titleSearchResults[i];
+      if (!item) return;
+      document.getElementById("entry-title").value = item.title;
+      document.getElementById("title-dropdown").style.display = "none";
+    }
+
+    // ── AI blurb ──
+    async function loadAIBlurb(title, mediaType) {
+      const btn  = document.getElementById("ai-blurb-btn");
+      const body = document.getElementById("ai-blurb-body");
+      if (!btn || !body) return;
+      btn.disabled = true;
+      btn.textContent = "Thinking…";
+      body.style.display = "none";
+      const text = await getAIBlurb(title, mediaType);
+      btn.style.display = "none";
+      if (text) {
+        body.textContent = text;
+        body.style.display = "";
+      } else {
+        body.textContent = "Couldn't generate a blurb. Try again later.";
+        body.style.display = "";
+      }
+    }
+
+    async function getAIBlurb(title, mediaType) {
+      const apiKey = getAnthropicKey();
+      if (!apiKey || !apiKey.startsWith("sk-")) return null;
+      const logEntries = loadLog().slice(0, 15);
+      const logLines = logEntries.map(e => {
+        const t = getEntryTitle(e);
+        const r = e.rating ? `${e.rating}/10` : "unrated";
+        const s = e.status || "completed";
+        return `${e.mediaType || "Media"}: "${t}" - ${r} (${s})`;
+      }).join("\n");
+      const typeStr = mediaType ? ` (${mediaType})` : "";
+      const prompt = `Based on this user's media log:\n${logLines}\n\nIn exactly 2 sentences, explain why this user would enjoy "${title}"${typeStr}. Be specific about connections to things they've already loved.`;
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 150, messages: [{ role: "user", content: prompt }] })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.content?.[0]?.text?.trim() || null;
+      } catch { return null; }
+    }
+
+    // ── Stats page ──
+    function renderStats() {
+      const entries = loadLog();
+      const content = document.getElementById("stats-content");
+      if (!content) return;
+
+      if (entries.length === 0) {
+        content.innerHTML = '<p class="stats-empty">No entries yet — log some media to see your stats.</p>';
+        return;
+      }
+
+      // Summary
+      const totalLogged  = entries.length;
+      const rated        = entries.filter(e => e.rating);
+      const avgRating    = rated.length > 0
+        ? (rated.reduce((sum, e) => sum + parseFloat(e.rating), 0) / rated.length).toFixed(1)
+        : "—";
+
+      // Most logged type
+      const typeCounts = {};
+      for (const e of entries) { const t = e.mediaType || "Unknown"; typeCounts[t] = (typeCounts[t] || 0) + 1; }
+      const mostType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+
+      // Most active month
+      const monthCounts = {};
+      for (const e of entries) {
+        const d = new Date(e.date);
+        const key = d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+        monthCounts[key] = (monthCounts[key] || 0) + 1;
+      }
+      const mostMonth = Object.entries(monthCounts).sort((a, b) => b[1] - a[1])[0];
+
+      // Status breakdown
+      const statusCounts = {};
+      for (const e of entries) { const s = e.status || ""; if (s) statusCounts[s] = (statusCounts[s] || 0) + 1; }
+      const hasStatuses = Object.keys(statusCounts).length > 0;
+
+      // Rating distribution
+      const ratingCounts = {};
+      for (let i = 1; i <= 10; i++) ratingCounts[i] = 0;
+      for (const e of entries) { if (e.rating) ratingCounts[parseInt(e.rating)] = (ratingCounts[parseInt(e.rating)] || 0) + 1; }
+      const maxRatingCount = Math.max(...Object.values(ratingCounts), 1);
+
+      // Type bar chart
+      const typeOrder = ["Film", "Television Series", "Game", "Song", "Album", "Book"];
+      const typeBarData = typeOrder.filter(t => typeCounts[t]).map(t => ({ label: t, count: typeCounts[t] }));
+      const unknowns = Object.entries(typeCounts).filter(([t]) => !typeOrder.includes(t));
+      for (const [t, c] of unknowns) typeBarData.push({ label: t, count: c });
+      const maxTypeCount = Math.max(...typeBarData.map(d => d.count), 1);
+
+      const typeColors = { "Film": "#9aa0a8", "Television Series": "#ff6b6b", "Game": "#4fa3f7", "Song": "#4ecb71", "Album": "#4ecb71", "Book": "#ff8c42" };
+
+      const statusLabels = { "completed": "Completed", "in-progress": "In Progress", "not-started": "Not Started", "dropped": "Dropped" };
+      const statusColors = { "completed": "#4ecb71", "in-progress": "#4fa3f7", "not-started": "#aaaaaa", "dropped": "#ff6b6b" };
+      const maxStatusCount = Math.max(...Object.values(statusCounts), 1);
+
+      content.innerHTML = `
+        <div class="stats-summary-grid">
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Total Logged</div>
+            <div class="stats-summary-value">${totalLogged}</div>
+          </div>
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Average Rating</div>
+            <div class="stats-summary-value">${avgRating}</div>
+            <div class="stats-summary-sub">out of 10</div>
+          </div>
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Most Logged Type</div>
+            <div class="stats-summary-value" style="font-size:16px;">${mostType ? mostType[0] : "—"}</div>
+            <div class="stats-summary-sub">${mostType ? mostType[1] + " entries" : ""}</div>
+          </div>
+          <div class="stats-summary-card">
+            <div class="stats-summary-label">Most Active Month</div>
+            <div class="stats-summary-value" style="font-size:16px;">${mostMonth ? mostMonth[0] : "—"}</div>
+            <div class="stats-summary-sub">${mostMonth ? mostMonth[1] + " entries" : ""}</div>
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <div class="stats-section-title">By Media Type</div>
+          ${typeBarData.map(d => `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label">${d.label}</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${Math.round(d.count / maxTypeCount * 100)}%;background:${typeColors[d.label] || "#888"};"></div>
+              </div>
+              <span class="stats-bar-count">${d.count}</span>
+            </div>`).join("")}
+        </div>
+
+        <div class="stats-section">
+          <div class="stats-section-title">Rating Distribution</div>
+          ${[1,2,3,4,5,6,7,8,9,10].map(r => `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label">${r}/10</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${Math.round(ratingCounts[r] / maxRatingCount * 100)}%;background:var(--text3);"></div>
+              </div>
+              <span class="stats-bar-count">${ratingCounts[r]}</span>
+            </div>`).join("")}
+        </div>
+
+        ${hasStatuses ? `
+        <div class="stats-section">
+          <div class="stats-section-title">Status Breakdown</div>
+          ${Object.entries(statusCounts).map(([s, c]) => `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label">${statusLabels[s] || s}</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${Math.round(c / maxStatusCount * 100)}%;background:${statusColors[s] || "#888"};"></div>
+              </div>
+              <span class="stats-bar-count">${c}</span>
+            </div>`).join("")}
+        </div>` : ""}
+      `;
+    }
+
+    // ── Settings ──
+    function openSettings() {
+      document.getElementById("settings-anthropic-key").value = getAnthropicKey();
+      document.getElementById("settings-tmdb-key").value      = getTmdbKey();
+      document.getElementById("settings-overlay").style.display = "flex";
+    }
+    function closeSettings() {
+      document.getElementById("settings-overlay").style.display = "none";
+    }
+    function closeSettingsOutside(e) {
+      if (e.target === document.getElementById("settings-overlay")) closeSettings();
+    }
+
+    renderLog();
   </script>
 
 </body>
