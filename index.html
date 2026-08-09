@@ -1252,6 +1252,18 @@
     const LISTS_KEY   = "jdrecs_lists";
     const THEME_KEY   = "jdlogs_theme";
 
+    // HTML-escape for innerHTML injection; attr() for single-quoted onclick string args
+    function esc(s) {
+      return String(s ?? "")
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+    function attr(s) {
+      return String(s ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    }
+
+    let _pendingBacklogKey = null; // cleared on cancel, consumed on save
+
     let currentDetailIndex     = null;
     let currentDetailTitle     = null;
     let currentDetailMediaType = null;
@@ -1304,7 +1316,6 @@
     (function applyTheme() {
       if (localStorage.getItem(THEME_KEY) === "dark") {
         document.body.classList.add("dark");
-        document.getElementById("theme-toggle").textContent = "☀ Light mode";
       }
     })();
 
@@ -1356,7 +1367,6 @@
     function toggleDarkMode() {
       const isDark = document.body.classList.toggle("dark");
       localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-      document.getElementById("theme-toggle").textContent = isDark ? "☀ Light mode" : "☾ Dark mode";
     }
 
     // ── Date field toggles ──
@@ -1634,26 +1644,26 @@
         const sortedTypes = Object.keys(grouped).sort((a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b));
         const groupsHTML  = sortedTypes.map(type => `
           <div class="log-type-group">
-            <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
+            <div class="log-type-label">${esc(TYPE_PLURALS[type] || type + "s")}</div>
             ${grouped[type].map(r => `
               <div class="log-item">
-                <span class="log-item-title">${r.title}</span>
-                <span class="log-item-reason"> — ${r.reason}</span>
+                <span class="log-item-title">${esc(r.title)}</span>
+                <span class="log-item-reason"> — ${esc(r.reason)}</span>
               </div>`).join("")}
           </div>`).join("");
 
         const reviewDisplay = entry.review
           ? `<div class="log-entry-review-label">Review</div>
-             <div class="log-entry-review-text">${entry.review}</div>
+             <div class="log-entry-review-text">${esc(entry.review)}</div>
              <button class="btn-inline muted" onclick="startEditReview(${index})">Edit</button>`
           : `<button class="btn-inline muted" onclick="startEditReview(${index})">+ Add review</button>`;
 
         const entryTags = entry.tags || [];
-        const tagsHTML = entryTags.length > 0 ? `<div class="tag-list" style="margin-top:6px;">${entryTags.map(t => `<span class="tag-pill">${t}</span>`).join("")}</div>` : "";
+        const tagsHTML = entryTags.length > 0 ? `<div class="tag-list" style="margin-top:6px;">${entryTags.map(t => `<span class="tag-pill">${esc(t)}</span>`).join("")}</div>` : "";
 
         const bodyHTML = isCollapsed ? "" : `
           <div class="log-entry-body">
-            <div class="log-history">${entry.history}</div>
+            <div class="log-history">${esc(entry.history)}</div>
             <div style="margin-bottom:10px;">
               <div id="review-display-${index}">${reviewDisplay}</div>
               <div id="review-edit-${index}" style="display:none;flex-direction:column;gap:4px;">
@@ -1861,11 +1871,11 @@
         const sortedTypes = Object.keys(grouped).sort((a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b));
         const groupsHTML  = sortedTypes.map(type => `
           <div class="log-type-group">
-            <div class="log-type-label">${TYPE_PLURALS[type] || type + "s"}</div>
+            <div class="log-type-label">${esc(TYPE_PLURALS[type] || type + "s")}</div>
             ${grouped[type].map(r => `
               <div class="log-item">
-                <span class="log-item-title">${r.title}</span>
-                <span class="log-item-reason"> — ${r.reason}</span>
+                <span class="log-item-title">${esc(r.title)}</span>
+                <span class="log-item-reason"> — ${esc(r.reason)}</span>
               </div>`).join("")}
           </div>`).join("");
         suggCard.innerHTML = `
@@ -1972,7 +1982,7 @@
               <div class="detail-field-label">Review</div>
               <div id="det-review-display">
                 ${entry.review
-                  ? `<div class="detail-field-value" style="white-space:pre-wrap;line-height:1.6;">${entry.review}</div>`
+                  ? `<div class="detail-field-value" style="white-space:pre-wrap;line-height:1.6;">${esc(entry.review)}</div>`
                   : `<div style="font-size:12px;color:var(--text4);font-style:italic;">No review yet</div>`}
               </div>
               <div id="det-review-edit" style="display:none;margin-top:6px;">
@@ -2021,7 +2031,7 @@
             <div class="detail-field-label">Lists</div>
             <div id="det-lists-display" style="position:relative;">
               ${renderEntryListBadges(entry.date)}
-              <button class="btn-inline muted" onclick="toggleListPicker(${JSON.stringify(entry.date)})">+ Add to list</button>
+              <button class="btn-inline muted" onclick="toggleListPicker('${attr(entry.date)}')">+ Add to list</button>
               <div id="list-picker-drop" class="list-add-picker" style="display:none;"></div>
             </div>
           </div>
@@ -2030,7 +2040,7 @@
         <div class="detail-log-row" style="border-bottom:none;">
           <div class="detail-field-label">Logged</div>
           <div class="detail-field-value" style="color:var(--text3);">${loggedDate}</div>
-          ${entry.history ? `<div class="log-history" style="margin:8px 0 0;">${entry.history}</div>` : ""}
+          ${entry.history ? `<div class="log-history" style="margin:8px 0 0;">${esc(entry.history)}</div>` : ""}
         </div>
       `;
     }
@@ -2109,6 +2119,7 @@
       const form    = document.getElementById("manual-form");
       const visible = form.style.display !== "none";
       form.style.display = visible ? "none" : "block";
+      if (visible) _pendingBacklogKey = null; // cancel → don't remove from backlog
       if (!visible) {
         const t = new Date().toISOString().slice(0, 10);
         document.getElementById("manual-title").value       = "";
@@ -2142,6 +2153,11 @@
       const entries = loadLog();
       entries.unshift({ date: entryDate, title, mediaType, recordDate, startDate, endDate, rating, review, history, recommendations: [], manual: true, status: status || "" });
       localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+      // Remove from backlog if this entry was triggered by "Log it"
+      if (_pendingBacklogKey) {
+        saveBacklogData(loadBacklog().filter(b => b.date !== _pendingBacklogKey));
+        _pendingBacklogKey = null;
+      }
       toggleAddForm();
       renderLog();
       // Fire-and-forget artwork for supported types
@@ -2294,9 +2310,9 @@ Example format:
           const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(r.title)}&go=Go`;
           return `
             <div class="result-card">
-              <div class="result-number">#${i + 1} &mdash; ${r.type}</div>
-              <div class="result-title"><a href="${wikiUrl}" target="_blank" rel="noopener noreferrer">${r.title}</a></div>
-              <div class="result-reason">${r.reason}</div>
+              <div class="result-number">#${i + 1} &mdash; ${esc(r.type)}</div>
+              <div class="result-title"><a href="${wikiUrl}" target="_blank" rel="noopener noreferrer">${esc(r.title)}</a></div>
+              <div class="result-reason">${esc(r.reason)}</div>
             </div>`;
         }).join("");
 
@@ -2381,10 +2397,10 @@ Example format:
       const badge   = item.logIdx !== -1
         ? typeTagHTML(entries[item.logIdx].mediaType)
         : (item.mediaType ? typeTagHTML(item.mediaType) : "");
-      const sub = item.subtitle ? `<span class="search-result-sub">${item.subtitle}</span>` : "";
+      const sub = item.subtitle ? `<span class="search-result-sub">${esc(item.subtitle)}</span>` : "";
       return `<div class="search-result-item" onclick="selectSearchResult(${i})">
         <div class="search-result-left">
-          <span class="search-result-title">${item.title}</span>
+          <span class="search-result-title">${esc(item.title)}</span>
           ${sub}
         </div>
         ${badge}
@@ -2595,8 +2611,10 @@ Example format:
       currentDetailTitle     = title;
       currentDetailMediaType = mediaType || null;
       currentBackView        = "home";
-      ["home", "log", "detail"].forEach(n =>
+      ["home","log","detail","stats","backlog","lists"].forEach(n =>
         document.getElementById(`view-${n}`).style.display = n === "detail" ? "" : "none");
+      ["nav-log-btn","nav-stats-btn","nav-backlog-btn","nav-lists-btn"].forEach(id =>
+        document.getElementById(id).classList.remove("active"));
       document.getElementById("nav-log-btn").classList.add("active");
       loadDetailViewForTitle(title);
     }
@@ -2622,7 +2640,7 @@ Example format:
       document.getElementById("detail-log-now-wrap").innerHTML =
         `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>
          <button class="log-now-btn" style="background:rgba(255,255,255,0.07);color:var(--text2);margin-left:6px;"
-           onclick="addTitleToBacklog(${JSON.stringify(title)}, ${JSON.stringify(currentDetailMediaType || '')})">
+           onclick="addTitleToBacklog('${attr(title)}', '${attr(currentDetailMediaType || '')}')">
            ${isInBacklog ? "✓ In Backlog" : "+ Backlog"}
          </button>`;
 
@@ -2685,7 +2703,7 @@ Example format:
           <div class="ai-blurb-card">
             <div class="ai-blurb-header">
               <span>Why you'd like it</span>
-              <button class="ai-blurb-btn" id="ai-blurb-btn" onclick="loadAIBlurb(${JSON.stringify(title)}, ${JSON.stringify(blurbType)})">Generate</button>
+              <button class="ai-blurb-btn" id="ai-blurb-btn" onclick="loadAIBlurb('${attr(title)}', '${attr(blurbType)}')">Generate</button>
             </div>
             <div class="ai-blurb-body" id="ai-blurb-body" style="display:none;font-size:13px;color:var(--text2);line-height:1.75;padding:14px 16px;"></div>
           </div>`;
@@ -2754,10 +2772,10 @@ Example format:
           return;
         }
         drop.innerHTML = raw.map((r, i) => {
-          const sub = r.subtitle ? `<span class="search-result-sub">${r.subtitle}</span>` : "";
+          const sub = r.subtitle ? `<span class="search-result-sub">${esc(r.subtitle)}</span>` : "";
           return `<div class="search-result-item" onclick="selectTitleResult(${i})">
             <div class="search-result-left">
-              <span class="search-result-title">${r.title}</span>
+              <span class="search-result-title">${esc(r.title)}</span>
               ${sub}
             </div>
           </div>`;
@@ -2835,10 +2853,10 @@ Example format:
           ? `<img class="shelf-cell-poster" src="${entry.thumbnailUrl}" alt="">`
           : `<div class="shelf-cell-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
         return `<div class="shelf-cell" onclick="showView('detail', ${index})">
-          ${poster}
+          <div id="ep-${index}" style="line-height:0;">${poster}</div>
           <div class="shelf-cell-info">
-            <div class="shelf-cell-title">${title}</div>
-            <div class="shelf-cell-sub">${entry.rating ? entry.rating + "/10" : (entry.mediaType || "")}</div>
+            <div class="shelf-cell-title">${esc(title)}</div>
+            <div class="shelf-cell-sub">${entry.rating ? entry.rating + "/10" : esc(entry.mediaType || "")}</div>
           </div>
         </div>`;
       }).join("")}</div>`;
@@ -2852,30 +2870,32 @@ Example format:
     // ── Diary view ──
     function renderDiary(indexed) {
       const container = document.getElementById("log");
-      // Group by month of recordDate (or startDate/date as fallback)
+      // Group by month; use YYYY-MM as the sort key (avoids locale-string Date parsing)
       const months = {};
       for (const { entry, index } of indexed) {
-        const raw = entry.recordDate || entry.startDate || entry.date;
-        const d   = new Date(raw.length === 10 ? raw + "T12:00:00" : raw);
-        const key = d.toLocaleDateString("en-US", { year: "numeric", month: "long" });
-        if (!months[key]) months[key] = [];
-        months[key].push({ entry, index, d });
+        const raw  = entry.recordDate || entry.startDate || entry.date;
+        const d    = new Date(raw.length === 10 ? raw + "T12:00:00" : raw);
+        const sort = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+        const label = d.toLocaleDateString("en-US", { year: "numeric", month: "long" });
+        if (!months[sort]) months[sort] = { label, entries: [] };
+        months[sort].entries.push({ entry, index, d });
       }
-      // Sort months descending
-      const sortedKeys = Object.keys(months).sort((a, b) => new Date(b) - new Date(a));
-      container.innerHTML = sortedKeys.map(month => {
-        const rows = months[month].sort((a, b) => b.d - a.d).map(({ entry, index, d }) => {
+      // Sort months descending by YYYY-MM string (locale-independent)
+      const sortedKeys = Object.keys(months).sort((a, b) => b.localeCompare(a));
+      container.innerHTML = sortedKeys.map(sort => {
+        const { label, entries: monthEntries } = months[sort];
+        const rows = monthEntries.sort((a, b) => b.d - a.d).map(({ entry, index, d }) => {
           const title  = getEntryTitle(entry);
           const day    = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
           return `<div class="diary-row" onclick="showView('detail', ${index})">
             ${typeTagHTML(entry.mediaType)}
-            <span class="diary-row-date">${day}</span>
-            <span class="diary-row-title">${title}</span>
+            <span class="diary-row-date">${esc(day)}</span>
+            <span class="diary-row-title">${esc(title)}</span>
             <span class="diary-row-rating">${entry.rating ? entry.rating + "/10" : ""}</span>
           </div>`;
         }).join("");
         return `<div class="diary-month-block">
-          <div class="diary-month-label">${month}</div>
+          <div class="diary-month-label">${esc(label)}</div>
           ${rows}
         </div>`;
       }).join("");
@@ -2888,7 +2908,7 @@ Example format:
       const allTags = [...new Set(entries.flatMap(e => e.tags || []))].sort();
       if (allTags.length === 0) { row.innerHTML = ""; return; }
       row.innerHTML = allTags.map(t =>
-        `<span class="tag-filter-chip${currentTagFilter === t ? " on" : ""}" onclick="toggleTagFilter(${JSON.stringify(t)})">${t}</span>`
+        `<span class="tag-filter-chip${currentTagFilter === t ? " on" : ""}" onclick="toggleTagFilter('${attr(t)}')">${esc(t)}</span>`
       ).join("");
     }
 
@@ -2901,7 +2921,7 @@ Example format:
     function renderTagsDisplay(tags, index) {
       if (!tags.length) return `<span style="font-size:12px;color:var(--text4);font-style:italic;">No tags yet</span>`;
       return `<div class="tag-list">${tags.map((t, i) =>
-        `<span class="tag-pill">${t}<span class="tag-remove-btn" onclick="removeTagFromDetail(${index}, ${i})">✕</span></span>`
+        `<span class="tag-pill">${esc(t)}<span class="tag-remove-btn" onclick="removeTagFromDetail(${index}, ${i})">✕</span></span>`
       ).join("")}</div>`;
     }
 
@@ -2932,8 +2952,8 @@ Example format:
       const lists = loadLists().filter(l => l.items.includes(entryDate));
       if (!lists.length) return "";
       return lists.map(l =>
-        `<span class="tag-pill" style="margin-right:4px;cursor:pointer;" onclick="showListDetail(${JSON.stringify(l.id)})">${l.name}
-          <span class="tag-remove-btn" onclick="event.stopPropagation();removeEntryFromList(${JSON.stringify(l.id)}, ${JSON.stringify(entryDate)})">✕</span>
+        `<span class="tag-pill" style="margin-right:4px;cursor:pointer;" onclick="showListDetail('${attr(l.id)}')">${esc(l.name)}
+          <span class="tag-remove-btn" onclick="event.stopPropagation();removeEntryFromList('${attr(l.id)}','${attr(entryDate)}')">✕</span>
         </span>`
       ).join("");
     }
@@ -2948,8 +2968,8 @@ Example format:
       } else {
         drop.innerHTML = lists.map(l => {
           const inList = l.items.includes(entryDate);
-          return `<div class="list-add-picker-item" onclick="toggleEntryInList(${JSON.stringify(l.id)}, ${JSON.stringify(entryDate)})">
-            ${inList ? "✓ " : ""}${l.name}
+          return `<div class="list-add-picker-item" onclick="toggleEntryInList('${attr(l.id)}','${attr(entryDate)}')">
+            ${inList ? "✓ " : ""}${esc(l.name)}
           </div>`;
         }).join("");
       }
@@ -3037,7 +3057,7 @@ Example format:
       items[idx].thumbnailUrl = url;
       saveBacklogData(items);
       const el = document.getElementById(`bp-${idx}`);
-      if (el) el.innerHTML = `<img class="backlog-card-poster" src="${url}" alt="" onclick="addTitleToBacklogDetail(${JSON.stringify(items[idx].title)})">`;
+      if (el) el.innerHTML = `<img class="backlog-card-poster" src="${url}" alt="" onclick="showDetailForTitle('${attr(items[idx].title)}','${attr(items[idx].mediaType || '')}')">`;
     }
 
     function addTitleToBacklog(title, mediaType) {
@@ -3086,8 +3106,8 @@ Example format:
       sel.value = item.mediaType || "";
       updateSelectColor(sel);
       toggleManualDateFields();
-      // remove from backlog after moving
-      saveBacklogData(items.filter(b => b.date !== dateKey));
+      // defer removal: only delete from backlog after the user actually saves
+      _pendingBacklogKey = dateKey;
       form.scrollIntoView({ behavior: "smooth" });
     }
 
@@ -3105,16 +3125,16 @@ Example format:
         const rawAccent = (TYPE_COLORS[item.mediaType] || { bg: "#888888" }).bg;
         const accent    = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
         const poster = item.thumbnailUrl
-          ? `<img class="backlog-card-poster" id="bp-${idx}" src="${item.thumbnailUrl}" alt="" onclick="showDetailForTitle(${JSON.stringify(item.title)}, ${JSON.stringify(item.mediaType)})">`
-          : `<div class="backlog-card-fallback" id="bp-${idx}" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})" onclick="showDetailForTitle(${JSON.stringify(item.title)}, ${JSON.stringify(item.mediaType)})">${initial}</div>`;
+          ? `<img class="backlog-card-poster" id="bp-${idx}" src="${item.thumbnailUrl}" alt="" onclick="showDetailForTitle('${attr(item.title)}','${attr(item.mediaType || '')}')">`
+          : `<div class="backlog-card-fallback" id="bp-${idx}" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})" onclick="showDetailForTitle('${attr(item.title)}','${attr(item.mediaType || '')}')">${initial}</div>`;
         return `<div class="backlog-card">
           ${poster}
           <div class="backlog-card-body">
             <div class="backlog-card-title">${item.title}</div>
             <div class="backlog-card-type">${item.mediaType || "—"}</div>
             <div class="backlog-card-actions">
-              <button class="btn-log-it" onclick="moveBacklogToLog(${JSON.stringify(item.date)})">Log it</button>
-              <button class="btn-backlog-del" onclick="removeBacklogEntry(${JSON.stringify(item.date)})">✕</button>
+              <button class="btn-log-it" onclick="moveBacklogToLog('${attr(item.date)}')">Log it</button>
+              <button class="btn-backlog-del" onclick="removeBacklogEntry('${attr(item.date)}')">✕</button>
             </div>
           </div>
         </div>`;
@@ -3174,8 +3194,8 @@ Example format:
             ? `<img class="list-preview-img" src="${entry.thumbnailUrl}" alt="">`
             : `<div class="list-preview-fb" style="background:linear-gradient(160deg,${acc},${darkenHex(acc,0.52)})">${initial}</div>`;
         }).join("");
-        return `<div class="list-card" onclick="showListDetail(${JSON.stringify(list.id)})">
-          <div class="list-card-name">${list.name}</div>
+        return `<div class="list-card" onclick="showListDetail('${attr(list.id)}')">
+          <div class="list-card-name">${esc(list.name)}</div>
           <div class="list-card-meta">${count} item${count !== 1 ? "s" : ""}</div>
           ${previews ? `<div class="list-previews">${previews}</div>` : ""}
         </div>`;
@@ -3219,6 +3239,8 @@ Example format:
       ["home","log","detail","stats","backlog"].forEach(n =>
         document.getElementById(`view-${n}`).style.display = "none");
       document.getElementById("view-lists").style.display = "";
+      ["nav-log-btn","nav-stats-btn","nav-backlog-btn","nav-lists-btn"].forEach(id =>
+        document.getElementById(id).classList.remove("active"));
       document.getElementById("nav-lists-btn").classList.add("active");
     }
 
