@@ -31,7 +31,7 @@
     /* ── Background orbs ── */
     .orb {
       position: fixed; border-radius: 50%;
-      pointer-events: none; z-index: 0; filter: blur(90px); opacity: 0.45;
+      pointer-events: none; z-index: -1; filter: blur(90px); opacity: 0.45;
     }
     .orb-blue-1   { width: 480px; height: 480px; background: #006BB6; top: -160px; right: -100px; }
     .orb-orange-1 { width: 320px; height: 320px; background: #F58426; bottom: 60px; left: -80px; }
@@ -701,9 +701,26 @@
     .stats-bar-count { font-size: 12px; color: var(--text3); min-width: 28px; text-align: right; }
     .stats-empty { font-size: 13px; color: var(--text4); text-align: center; padding: 24px 0; }
 
-    /* ── View z-index ── */
+    /* ── View containers ── */
     #view-home, #view-log, #view-detail, #view-stats {
-      position: relative; z-index: 1;
+      position: relative;
+    }
+
+    /* ── Artist sub-input (Song / Album) ── */
+    .artist-input-row {
+      display: none;
+      position: relative;
+      margin-top: -8px;
+      margin-bottom: 14px;
+    }
+    .artist-input-row.visible { display: block; }
+    .artist-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text4);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
     }
   </style>
 </head>
@@ -762,7 +779,7 @@
           autocomplete="off" spellcheck="false"
           oninput="updateSearch()" onfocus="updateSearch()" />
       </div>
-      <select id="search-type" class="search-type-select" onchange="updateSearch()">
+      <select id="search-type" class="search-type-select" onchange="updateSearch(); toggleSearchArtist()">
         <option value="">All</option>
         <option value="Film">Film</option>
         <option value="Television Series">TV</option>
@@ -772,6 +789,16 @@
         <option value="Book">Book</option>
       </select>
     </div>
+    <div id="search-artist-row" class="artist-input-row" style="margin-top:6px;margin-bottom:0;">
+      <div class="artist-label">Artist</div>
+      <div class="search-input-wrap">
+        <span class="search-icon">♪</span>
+        <input type="text" id="search-artist" class="search-input"
+          placeholder="Artist name to narrow results…"
+          autocomplete="off" spellcheck="false"
+          oninput="updateSearch()" />
+      </div>
+    </div>
     <div id="search-dropdown" class="search-dropdown" style="display:none;"></div>
   </div>
 
@@ -780,12 +807,19 @@
     <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
 
     <label for="entry-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
-    <div style="position:relative;margin-bottom:14px;z-index:10;">
+    <div style="position:relative;margin-bottom:14px;">
       <input type="text" id="entry-title" class="title-input" style="margin-bottom:0;"
         placeholder="e.g. Inception, Hollow Knight, Dune"
         autocomplete="off" spellcheck="false"
         oninput="updateTitleSearch()" onfocus="updateTitleSearch()" />
       <div id="title-dropdown" class="search-dropdown" style="display:none;"></div>
+    </div>
+    <div id="title-artist-row" class="artist-input-row">
+      <div class="artist-label">Artist</div>
+      <input type="text" id="entry-artist" class="title-input" style="margin-bottom:0;"
+        placeholder="Artist name to narrow results…"
+        autocomplete="off" spellcheck="false"
+        oninput="updateTitleSearch()" />
     </div>
 
     <label for="history">Context for recommendations</label>
@@ -800,7 +834,7 @@
     <div class="form-row">
       <div>
         <label for="media-type">Media type</label>
-        <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields(); updateTitleSearch()">
+        <select id="media-type" onchange="updateSelectColor(this); toggleMainDateFields(); toggleTitleArtist(); updateTitleSearch()">
           <option value="">— Select —</option>
           <option value="Film">Film</option>
           <option value="Television Series">Television Series</option>
@@ -1083,6 +1117,34 @@
       document.getElementById("manual-date-single").style.display = isRange ? "none" : "";
       document.getElementById("manual-date-start").style.display  = isRange ? "" : "none";
       document.getElementById("manual-date-end").style.display    = isRange ? "" : "none";
+    }
+
+    const ARTIST_TYPES = new Set(["Song", "Album"]);
+
+    function toggleTitleArtist() {
+      const type = document.getElementById("media-type").value;
+      const row  = document.getElementById("title-artist-row");
+      if (!row) return;
+      if (ARTIST_TYPES.has(type)) {
+        row.classList.add("visible");
+      } else {
+        row.classList.remove("visible");
+        const inp = document.getElementById("entry-artist");
+        if (inp) inp.value = "";
+      }
+    }
+
+    function toggleSearchArtist() {
+      const type = document.getElementById("search-type").value;
+      const row  = document.getElementById("search-artist-row");
+      if (!row) return;
+      if (ARTIST_TYPES.has(type)) {
+        row.classList.add("visible");
+      } else {
+        row.classList.remove("visible");
+        const inp = document.getElementById("search-artist");
+        if (inp) inp.value = "";
+      }
     }
 
     // ── Select color ──
@@ -1938,12 +2000,13 @@ Example format:
           .filter(m => m.title.toLowerCase().includes(ql) && (!type || m.mediaType === type));
 
         // API results
+        const searchArtist = (document.getElementById("search-artist")?.value || "").trim();
         let apiRaw = [];
         if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
-        else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group");
-        else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording");
+        else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
+        else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
         else                                   apiRaw = await searchWikipedia(q);
 
         // Dedup API results vs log
@@ -2018,10 +2081,11 @@ Example format:
       }));
     }
 
-    async function searchMusicBrainz(q, type) {
+    async function searchMusicBrainz(q, type, artist) {
+      const queryStr = artist ? `${q} AND artist:${artist}` : q;
       const url = type === "release-group"
-        ? `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&fmt=json&limit=7`
-        : `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(q)}&fmt=json&limit=7`;
+        ? `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(queryStr)}&fmt=json&limit=7`
+        : `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(queryStr)}&fmt=json&limit=7`;
       const res  = await fetch(url, { headers: { "User-Agent": "jdlogs/1.0 (personal media logger)" } });
       if (!res.ok) return [];
       const data = await res.json();
@@ -2208,15 +2272,16 @@ Example format:
     }
 
     async function runTitleSearch(q) {
-      const drop = document.getElementById("title-dropdown");
-      const type = document.getElementById("media-type").value;
+      const drop   = document.getElementById("title-dropdown");
+      const type   = document.getElementById("media-type").value;
+      const artist = (document.getElementById("entry-artist")?.value || "").trim();
       try {
         let raw = [];
         if      (type === "Film")              raw = await searchTMDB(q, "movie");
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
-        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group");
-        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording");
+        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
+        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
         else                                   raw = await searchWikipedia(q);
 
         _titleSearchResults = raw;
