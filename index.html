@@ -1235,22 +1235,6 @@
       </div>
     </div>
 
-    <div class="settings-card">
-      <div class="settings-card-title">Film &amp; TV</div>
-      <div class="settings-field">
-        <label for="settings-tmdb-key">TMDB API key</label>
-        <div class="key-row">
-          <input type="password" id="settings-tmdb-key" placeholder="b68a…"
-            oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
-        </div>
-        <p class="key-note">Get one at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys</p>
-      </div>
-    </div>
-
-    <div class="settings-card">
-      <div class="settings-card-title">Games</div>
-      <p class="key-note" style="margin:0;">Powered by <a href="https://opencritic.com" target="_blank" rel="noopener noreferrer">OpenCritic</a> — no API key required. Search, cover art, descriptions, publisher, and trailers work automatically.</p>
-    </div>
   </div>
 
   <script>
@@ -1292,63 +1276,8 @@
       "Book":              { bg: "#ff8c42", border: "none" },
     };
 
-    const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
     const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
-    function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
     function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
-
-    // ── OpenCritic game data (no API key required, browser CORS supported) ──
-    async function searchOpenCritic(q) {
-      try {
-        const res = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(q)}`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        return (data || []).slice(0, 7).map(g => ({
-          title:    g.name || "",
-          subtitle: g.firstReleaseDate ? g.firstReleaseDate.slice(0, 4) : ""
-        }));
-      } catch { return []; }
-    }
-
-    async function fetchOpenCriticGameData(title) {
-      try {
-        const searchRes = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(title)}`);
-        if (!searchRes.ok) return null;
-        const searchData = await searchRes.json();
-        const first = searchData?.[0];
-        if (!first?.id) return null;
-
-        const detailRes = await fetch(`https://api.opencritic.com/api/game/${first.id}`);
-        if (!detailRes.ok) return null;
-        const g = await detailRes.json();
-
-        const publisher = (g.Companies || []).find(c => c.type === "PUBLISHER")?.name
-                       || (g.Companies || [])[0]?.name || null;
-        const trailers  = g.trailers || [];
-        const trailer   = trailers.find(t => /trailer/i.test(t.title || "")) || trailers[0];
-        const coverUrl  = g.images?.banner?.og  || g.images?.banner?.sm
-                       || g.images?.squareBanner?.og || g.images?.square?.og
-                       || g.images?.box?.og || null;
-
-        return {
-          description:    g.description || "",
-          coverUrl,
-          publisher,
-          trailerKey:     trailer?.youtubeVideoId || null,
-          openCriticUrl:  g.url || `https://opencritic.com/game/${first.id}`
-        };
-      } catch { return null; }
-    }
-
-    async function fetchAndStoreOpenCriticGame(index, title) {
-      const data  = await fetchOpenCriticGameData(title);
-      const patch = data
-        ? { description: data.description, thumbnailUrl: data.coverUrl || null,
-            wikiUrl: data.openCriticUrl || null, publisher: data.publisher || null,
-            trailerKey: data.trailerKey || null }
-        : { description: "" };
-      updateEntry(index, patch);
-    }
 
     const TYPE_PLURALS = {
       "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
@@ -1799,13 +1728,6 @@
         if (sel && sel.parentElement.style.display !== "none") updateSelectColor(sel);
       });
 
-      // Backfill artwork for entries that haven't been fetched yet
-      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
-      indexed.forEach(({ entry, index }) => {
-        if (ARTWORK_TYPES.has(entry.mediaType) && entry.thumbnailUrl === undefined) {
-          kickArtworkFetch(entry.date, index, entry);
-        }
-      });
     }
 
     // ── Type edit ──
@@ -1884,20 +1806,7 @@
         posterEl.innerHTML = `<div class="poster-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
       }
 
-      // Meta: type tag + source link
-      const _extMap = {
-        "Film":              { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
-        "Television Series": { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
-        "Game":              { fallback: `https://opencritic.com/browse/all?title=${encodeURIComponent(title)}`,          label: "OpenCritic ↗" },
-        "Book":              { fallback: `https://openlibrary.org/search?q=${encodeURIComponent(title)}`,                label: "Open Library ↗" },
-      };
-      const _ext = _extMap[entry.mediaType];
-      const _extHtml = _ext
-        ? `<a href="${entry.wikiUrl || _ext.fallback}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">${_ext.label}</a>`
-        : "";
-      const _pubHtml = (entry.mediaType === "Game" && entry.publisher)
-        ? `<span class="detail-publisher">by ${esc(entry.publisher)}</span>` : "";
-      document.getElementById("detail-meta").innerHTML = `${typeTagHTML(entry.mediaType)} ${_pubHtml} ${_extHtml}`;
+      document.getElementById("detail-meta").innerHTML = typeTagHTML(entry.mediaType);
 
       // Title
       document.getElementById("detail-title").textContent = title;
@@ -1909,36 +1818,15 @@
 
       // Description
       const descEl = document.getElementById("detail-description");
-      if (entry.description !== undefined) {
-        if (entry.description) {
-          descEl.textContent = entry.description;
-          descEl.className   = "detail-hero-description";
-          descEl.style.display = "";
-        } else {
-          descEl.style.display = "none";
-        }
+      if (entry.description) {
+        descEl.textContent   = entry.description;
+        descEl.className     = "detail-hero-description";
+        descEl.style.display = "";
       } else {
-        if (entry.mediaType === "Game") {
-          descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreOpenCriticGame(index, title);
-        } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
-          descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreTMDB(index, title, entry.mediaType);
-        } else if (entry.mediaType === "Book") {
-          descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreOpenLibrary(index, title);
-        } else {
-          descEl.style.display = "none";
-        }
+        descEl.style.display = "none";
       }
 
-      // Trailer
       document.getElementById("detail-trailer").innerHTML = "";
-      if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
-        fetchTMDBTrailer(title, entry.mediaType).then(key => renderTrailer(key));
-      } else if (entry.mediaType === "Game") {
-        renderTrailer(entry.trailerKey || null);
-      }
 
       // User log data
       renderDetailLog(entry, index, isRange);
@@ -2171,63 +2059,6 @@
       document.getElementById("detail-title-edit").style.display     = "none";
     }
 
-    // ── TMDB data (Film / TV descriptions) ──
-    async function fetchTMDBData(title, mediaType) {
-      const key = getTmdbKey();
-      if (!key) return null;
-      const type = mediaType === "Film" ? "movie" : "tv";
-      try {
-        const res = await fetch(
-          `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(title)}&limit=1`
-        );
-        if (!res.ok) return null;
-        const data = await res.json();
-        const item = data.results?.[0];
-        if (!item) return null;
-        return {
-          description: item.overview || "",
-          thumbnailUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-          wikiUrl: `https://www.themoviedb.org/${type}/${item.id}`
-        };
-      } catch { return null; }
-    }
-
-    async function fetchAndStoreTMDB(index, title, mediaType) {
-      const data  = await fetchTMDBData(title, mediaType);
-      const patch = data
-        ? { description: data.description, thumbnailUrl: data.thumbnailUrl || null, wikiUrl: data.wikiUrl }
-        : { description: "" };
-      updateEntry(index, patch);
-    }
-
-    // ── OpenLibrary data (Book descriptions) ──
-    async function fetchOpenLibraryData(title) {
-      try {
-        const res = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}&limit=1&fields=title,cover_i,key,first_sentence`
-        );
-        if (!res.ok) return null;
-        const data = await res.json();
-        const item = data.docs?.[0];
-        if (!item) return null;
-        const desc = typeof item.first_sentence === "object"
-          ? (item.first_sentence?.value || "") : (item.first_sentence || "");
-        return {
-          description: desc,
-          thumbnailUrl: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null,
-          wikiUrl: item.key ? `https://openlibrary.org${item.key}` : null
-        };
-      } catch { return null; }
-    }
-
-    async function fetchAndStoreOpenLibrary(index, title) {
-      const data  = await fetchOpenLibraryData(title);
-      const patch = data
-        ? { description: data.description, thumbnailUrl: data.thumbnailUrl || null, wikiUrl: data.wikiUrl || null }
-        : { description: "" };
-      updateEntry(index, patch);
-    }
-
     // ── Manual add ──
     function toggleAddForm() {
       const form    = document.getElementById("manual-form");
@@ -2274,13 +2105,6 @@
       }
       toggleAddForm();
       renderLog();
-      // Fire-and-forget artwork for supported types
-      const ARTWORK_TYPES_M = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
-      if (title && ARTWORK_TYPES_M.has(mediaType)) {
-        fetchMediaArtwork(title, "", mediaType).then(url => {
-          if (url) patchEntryArtwork(entryDate, url);
-        });
-      }
     }
 
     // ── Export ──
@@ -2388,11 +2212,7 @@ Each object must have:
 Example format:
 [{"title":"...","type":"Film","reason":"..."},...]`;
 
-      // Fetch artwork in parallel with AI call (for types that have cover art)
-      const ARTWORK_TYPES_SET = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
-      const artworkPromise = (title && ARTWORK_TYPES_SET.has(mediaType))
-        ? fetchMediaArtwork(title, (document.getElementById("entry-artist")?.value || "").trim(), mediaType)
-        : Promise.resolve(undefined);
+      const artworkPromise = Promise.resolve(undefined);
 
       try {
         const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -2456,53 +2276,18 @@ Example format:
       const dropdown = document.getElementById("search-dropdown");
       const type     = document.getElementById("search-type").value;
       const ql       = q.toLowerCase();
-      try {
-        // Log matches first
-        const entries    = loadLog();
-        const logMatches = entries
-          .map((e, i) => ({ title: getEntryTitle(e), subtitle: "", mediaType: e.mediaType, logIdx: i, fromLog: true }))
-          .filter(m => m.title.toLowerCase().includes(ql) && (!type || m.mediaType === type));
+      const entries  = loadLog();
+      const matches  = entries
+        .map((e, i) => ({ title: getEntryTitle(e), subtitle: "", mediaType: e.mediaType, logIdx: i, fromLog: true }))
+        .filter(m => m.title.toLowerCase().includes(ql) && (!type || m.mediaType === type));
 
-        // API results
-        const searchArtist = (document.getElementById("search-artist")?.value || "").trim();
-        let apiRaw = [];
-        if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
-        else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
-        else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
-        else if (type === "Game")              apiRaw = await searchOpenCritic(q);
-        else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
-        else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
-        else                                   apiRaw = [];
-
-        // Dedup API results vs log
-        const logTitles  = new Set(logMatches.map(m => m.title.toLowerCase()));
-        const apiResults = apiRaw
-          .filter(r => r.action || !logTitles.has(r.title.toLowerCase()))
-          .map(r => ({ title: r.title, subtitle: r.subtitle || "", mediaType: type || null, logIdx: -1, fromLog: false, action: r.action || null }));
-
-        if (logMatches.length === 0 && apiResults.length === 0) {
-          _wikiSearchResults = [];
-          dropdown.innerHTML = `<div class="search-no-results">No results for "${q}"</div>`;
-          return;
-        }
-
-        _wikiSearchResults = [...logMatches, ...apiResults];
-
-        let html = "";
-        if (logMatches.length > 0) {
-          html += `<div class="search-section-label">Your log</div>`;
-          html += logMatches.map((_, i) => renderDropdownItem(i)).join("");
-        }
-        if (apiResults.length > 0) {
-          const label = type || "Online";
-          html += `<div class="search-section-label">${label}</div>`;
-          html += apiResults.map((_, i) => renderDropdownItem(logMatches.length + i)).join("");
-        }
-        dropdown.innerHTML = html;
-      } catch {
+      if (matches.length === 0) {
         _wikiSearchResults = [];
-        dropdown.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
+        dropdown.innerHTML = `<div class="search-no-results">Nothing in your log matches "${q}"</div>`;
+        return;
       }
+      _wikiSearchResults = matches;
+      dropdown.innerHTML = matches.map((_, i) => renderDropdownItem(i)).join("");
     }
 
     function renderDropdownItem(i) {
@@ -2531,174 +2316,6 @@ Example format:
       </div>`;
     }
 
-    async function searchTMDB(q, mediaType) {
-      const key = getTmdbKey();
-      if (!key) return [{ title: "Add your TMDB key on the home page to search Film & TV", subtitle: "" }];
-      const url = mediaType === "movie"
-        ? `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(q)}&api_key=${key}&page=1`
-        : `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(q)}&api_key=${key}&page=1`;
-      const res  = await fetch(url);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return (data.results || []).slice(0, 7).map(r => ({
-        title:    r.title || r.name || "",
-        subtitle: (r.release_date || r.first_air_date || "").slice(0, 4)
-      }));
-    }
-
-    async function searchOpenLibrary(q) {
-      const res  = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=7&fields=title,author_name`);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return (data.docs || []).slice(0, 7).map(r => ({
-        title:    r.title || "",
-        subtitle: (r.author_name || [])[0] || ""
-      }));
-    }
-
-    // ── TMDB Trailer ──
-    async function fetchTMDBTrailer(title, mediaType) {
-      const key = getTmdbKey();
-      if (!key) return null;
-      const type = mediaType === "Film" ? "movie" : "tv";
-      try {
-        const searchRes = await fetch(
-          `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(title)}&limit=1`
-        );
-        if (!searchRes.ok) return null;
-        const searchData = await searchRes.json();
-        const id = searchData.results?.[0]?.id;
-        if (!id) return null;
-        const videosRes = await fetch(
-          `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${key}`
-        );
-        if (!videosRes.ok) return null;
-        const videosData = await videosRes.json();
-        const vids = videosData.results || [];
-        const trailer = vids.find(v => v.site === "YouTube" && v.type === "Trailer")
-          || vids.find(v => v.site === "YouTube" && v.type === "Teaser")
-          || vids.find(v => v.site === "YouTube");
-        return trailer?.key || null;
-      } catch { return null; }
-    }
-
-    function renderTrailer(youtubeKey) {
-      const el = document.getElementById("detail-trailer");
-      if (!el) return;
-      if (!youtubeKey) { el.innerHTML = ""; return; }
-      el.innerHTML = `
-        <div class="trailer-wrap" id="trailer-wrap">
-          <div class="trailer-wrap-header" onclick="toggleTrailer()">
-            <span>Trailer</span>
-            <span class="trailer-arrow">▾</span>
-          </div>
-          <div class="trailer-body">
-            <div class="trailer-embed">
-              <iframe src="https://www.youtube-nocookie.com/embed/${youtubeKey}?rel=0&modestbranding=1"
-                allowfullscreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-              </iframe>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    function toggleTrailer() {
-      const wrap = document.getElementById("trailer-wrap");
-      if (wrap) wrap.classList.toggle("open");
-    }
-
-    // ── Cover art / poster artwork ──
-    const _artworkInFlight = new Set();
-
-    async function fetchMediaArtwork(title, artist, mediaType) {
-      try {
-        if (mediaType === "Song" || mediaType === "Album") {
-          const entity = mediaType === "Song" ? "song" : "album";
-          const query  = artist ? `${title} ${artist}` : title;
-          const res    = await fetch(
-            `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=${entity}&limit=5&media=music`
-          );
-          if (!res.ok) return null;
-          const data = await res.json();
-          const item = data.results?.[0];
-          return item?.artworkUrl100?.replace("100x100bb", "600x600bb") || null;
-        }
-        if (mediaType === "Film" || mediaType === "Television Series") {
-          const key = getTmdbKey();
-          if (!key) return null;
-          const type = mediaType === "Film" ? "movie" : "tv";
-          const res  = await fetch(
-            `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(title)}&limit=1`
-          );
-          if (!res.ok) return null;
-          const data = await res.json();
-          const path = data.results?.[0]?.poster_path;
-          return path ? `https://image.tmdb.org/t/p/w500${path}` : null;
-        }
-        if (mediaType === "Book") {
-          const res  = await fetch(
-            `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}&limit=5&fields=cover_i,title`
-          );
-          if (!res.ok) return null;
-          const data = await res.json();
-          const item = data.docs?.find(d => d.cover_i);
-          return item?.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null;
-        }
-        if (mediaType === "Game") {
-          const res = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(title)}`);
-          if (!res.ok) return null;
-          const results = await res.json();
-          const first = results?.[0];
-          if (!first?.id) return null;
-          const detail = await fetch(`https://api.opencritic.com/api/game/${first.id}`);
-          if (!detail.ok) return null;
-          const g = await detail.json();
-          return g.images?.banner?.og || g.images?.banner?.sm
-              || g.images?.squareBanner?.og || g.images?.square?.og
-              || g.images?.box?.og || null;
-        }
-        return null;
-      } catch { return null; }
-    }
-
-    function patchEntryArtwork(dateKey, url) {
-      const entries = loadLog();
-      const idx = entries.findIndex(e => e.date === dateKey);
-      if (idx === -1) return;
-      entries[idx].thumbnailUrl = url; // null = "tried, no art"; string = success
-      localStorage.setItem(LOG_KEY, JSON.stringify(entries));
-      if (url) {
-        const el = document.getElementById(`ep-${idx}`);
-        if (el) el.innerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
-      }
-    }
-
-    function kickArtworkFetch(dateKey, index, entry) {
-      if (_artworkInFlight.has(dateKey)) return;
-      _artworkInFlight.add(dateKey);
-      const title  = getEntryTitle(entry);
-      const artist = entry.artist || "";
-      fetchMediaArtwork(title, artist, entry.mediaType).then(url => {
-        _artworkInFlight.delete(dateKey);
-        patchEntryArtwork(dateKey, url !== null ? url : null);
-      }).catch(() => _artworkInFlight.delete(dateKey));
-    }
-
-    async function searchMusicBrainz(q, type, artist) {
-      const queryStr = artist ? `${q} AND artist:${artist}` : q;
-      const url = type === "release-group"
-        ? `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(queryStr)}&fmt=json&limit=7`
-        : `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(queryStr)}&fmt=json&limit=7`;
-      const res  = await fetch(url, { headers: { "User-Agent": "jdlogs/1.0 (personal media logger)" } });
-      if (!res.ok) return [];
-      const data = await res.json();
-      const items = type === "release-group" ? (data["release-groups"] || []) : (data.recordings || []);
-      return items.slice(0, 7).map(r => ({
-        title:    r.title || "",
-        subtitle: (r["artist-credit"] || []).map(a => a.artist?.name || "").filter(Boolean).join(", ")
-      }));
-    }
 
 
     function selectSearchResult(i) {
@@ -2752,20 +2369,22 @@ Example format:
       loadDetailViewForTitle(title);
     }
 
-    async function loadDetailViewForTitle(title) {
-      const initial = title.charAt(0).toUpperCase();
+    function loadDetailViewForTitle(title) {
+      const initial   = title.charAt(0).toUpperCase();
+      const knownType = currentDetailMediaType;
 
-      // Placeholder while fetching
       document.getElementById("detail-hero-top").style.background =
         `linear-gradient(135deg, rgba(136,136,136,0.15) 0%, rgba(136,136,136,0.04) 100%)`;
       document.getElementById("detail-poster").innerHTML =
         `<div class="poster-fallback" style="background:linear-gradient(160deg,#888,#444)">${initial}</div>`;
-      const knownType = currentDetailMediaType;
-      document.getElementById("detail-meta").innerHTML = knownType ? typeTagHTML(knownType) : "";
+      document.getElementById("detail-meta").innerHTML         = knownType ? typeTagHTML(knownType) : "";
       document.getElementById("detail-title").textContent      = title;
       document.getElementById("detail-title").style.display    = "";
       document.getElementById("detail-edit-title-btn").style.display = "none";
       document.getElementById("detail-title-edit").style.display     = "none";
+      document.getElementById("detail-trailer").innerHTML = "";
+      document.getElementById("detail-description").style.display = "none";
+
       const isInBacklog = loadBacklog().some(b => b.title.toLowerCase() === title.toLowerCase());
       document.getElementById("detail-log-now-wrap").innerHTML =
         `<button class="log-now-btn" onclick="logNow()">+ Log Now</button>
@@ -2773,57 +2392,6 @@ Example format:
            onclick="addTitleToBacklog('${attr(title)}', '${attr(currentDetailMediaType || '')}')">
            ${isInBacklog ? "✓ In Backlog" : "+ Backlog"}
          </button>`;
-
-      const descEl = document.getElementById("detail-description");
-      descEl.textContent = "Fetching description…";
-      descEl.className   = "detail-hero-description dim";
-      descEl.style.display = "";
-
-      // Trailer — resolve type from known type or log entry
-      document.getElementById("detail-trailer").innerHTML = "";
-      const resolvedType = knownType ||
-        loadLog().find(e => getEntryTitle(e).toLowerCase() === title.toLowerCase())?.mediaType || null;
-      if (resolvedType === "Film" || resolvedType === "Television Series") {
-        fetchTMDBTrailer(title, resolvedType).then(key => renderTrailer(key));
-      } else if (resolvedType === "Game") {
-        renderTrailer(null);
-      }
-
-      // Fetch metadata from each type's native source
-      const typeTag = knownType ? typeTagHTML(knownType) : "";
-      if (resolvedType === "Game") {
-        const oc = await fetchOpenCriticGameData(title);
-        if (oc) {
-          if (oc.description) { descEl.textContent = oc.description; descEl.className = "detail-hero-description"; }
-          else { descEl.style.display = "none"; }
-          if (oc.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${oc.coverUrl}" alt="">`;
-          const ocLink = oc.openCriticUrl || `https://opencritic.com/browse/all?title=${encodeURIComponent(title)}`;
-          const pubHtml = oc.publisher ? `<span class="detail-publisher">by ${esc(oc.publisher)}</span>` : "";
-          document.getElementById("detail-meta").innerHTML =
-            typeTag + pubHtml + `<a href="${ocLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">OpenCritic ↗</a>`;
-          if (oc.trailerKey) renderTrailer(oc.trailerKey);
-        } else { descEl.style.display = "none"; }
-      } else if (resolvedType === "Film" || resolvedType === "Television Series") {
-        const tmdb = await fetchTMDBData(title, resolvedType);
-        if (tmdb) {
-          if (tmdb.description) { descEl.textContent = tmdb.description; descEl.className = "detail-hero-description"; }
-          else { descEl.style.display = "none"; }
-          if (tmdb.thumbnailUrl) document.getElementById("detail-poster").innerHTML = `<img src="${tmdb.thumbnailUrl}" alt="">`;
-          document.getElementById("detail-meta").innerHTML =
-            typeTag + `<a href="${tmdb.wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">TMDB ↗</a>`;
-        } else { descEl.style.display = "none"; }
-      } else if (resolvedType === "Book") {
-        const ol = await fetchOpenLibraryData(title);
-        if (ol) {
-          if (ol.description) { descEl.textContent = ol.description; descEl.className = "detail-hero-description"; }
-          else { descEl.style.display = "none"; }
-          if (ol.thumbnailUrl) document.getElementById("detail-poster").innerHTML = `<img src="${ol.thumbnailUrl}" alt="">`;
-          if (ol.wikiUrl) document.getElementById("detail-meta").innerHTML =
-            typeTag + `<a href="${ol.wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Open Library ↗</a>`;
-        } else { descEl.style.display = "none"; }
-      } else {
-        descEl.style.display = "none";
-      }
 
       // Show log data if there's a matching entry
       const entries = loadLog();
@@ -2835,9 +2403,7 @@ Example format:
         const accent    = rawAccent === "#ffffff" ? "#9aa0a8" : rawAccent;
         document.getElementById("detail-hero-top").style.background =
           `linear-gradient(135deg, ${hexToRgba(accent, 0.22)} 0%, ${hexToRgba(accent, 0.05)} 100%)`;
-        // prepend type tag to meta
-        const metaEl = document.getElementById("detail-meta");
-        metaEl.innerHTML = typeTagHTML(entry.mediaType) + metaEl.innerHTML;
+        document.getElementById("detail-meta").innerHTML = typeTagHTML(entry.mediaType);
         renderDetailLog(entry, logIdx, isRange);
       } else {
         document.getElementById("detail-log-card").innerHTML  = "";
@@ -2904,47 +2470,28 @@ Example format:
     }
 
     async function runTitleSearch(q) {
-      const drop   = document.getElementById("title-dropdown");
-      const type   = document.getElementById("media-type").value;
-      const artist = (document.getElementById("entry-artist")?.value || "").trim();
-      try {
-        let raw = [];
-        if      (type === "Film")              raw = await searchTMDB(q, "movie");
-        else if (type === "Television Series") raw = await searchTMDB(q, "tv");
-        else if (type === "Book")              raw = await searchOpenLibrary(q);
-        else if (type === "Game")              raw = await searchOpenCritic(q);
-        else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
-        else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
-        else                                   raw = await searchWikipedia(q);
+      const drop = document.getElementById("title-dropdown");
+      const type = document.getElementById("media-type").value;
+      const ql   = q.toLowerCase();
+      const entries = loadLog();
+      const matches = entries
+        .filter(e => getEntryTitle(e).toLowerCase().includes(ql) && (!type || e.mediaType === type))
+        .slice(0, 7);
 
-        _titleSearchResults = raw;
-        if (raw.length === 0) {
-          drop.innerHTML = `<div class="search-no-results">No results</div>`;
-          return;
-        }
-        drop.innerHTML = raw.map((r, i) => {
-          if (r.action === "settings") {
-            return `<div class="search-action-item" onclick="selectTitleResult(${i})">
-              <span class="action-icon">⚙</span>
-              <div class="action-label">
-                <div style="font-weight:600;color:var(--text2)">${esc(r.title)}</div>
-                ${r.subtitle ? `<div style="font-size:11px;margin-top:2px">${esc(r.subtitle)}</div>` : ""}
-              </div>
-              <span class="search-action-arrow">→</span>
-            </div>`;
-          }
-          const sub = r.subtitle ? `<span class="search-result-sub">${esc(r.subtitle)}</span>` : "";
-          return `<div class="search-result-item" onclick="selectTitleResult(${i})">
-            <div class="search-result-left">
-              <span class="search-result-title">${esc(r.title)}</span>
-              ${sub}
-            </div>
-          </div>`;
-        }).join("");
-      } catch {
-        _titleSearchResults = [];
-        drop.innerHTML = `<div class="search-no-results">Search unavailable</div>`;
+      _titleSearchResults = matches.map(e => ({ title: getEntryTitle(e), subtitle: e.mediaType || "" }));
+      if (_titleSearchResults.length === 0) {
+        drop.innerHTML = `<div class="search-no-results">No matches in your log</div>`;
+        return;
       }
+      drop.innerHTML = _titleSearchResults.map((r, i) => {
+        const sub = r.subtitle ? `<span class="search-result-sub">${esc(r.subtitle)}</span>` : "";
+        return `<div class="search-result-item" onclick="selectTitleResult(${i})">
+          <div class="search-result-left">
+            <span class="search-result-title">${esc(r.title)}</span>
+            ${sub}
+          </div>
+        </div>`;
+      }).join("");
     }
 
     function selectTitleResult(i) {
@@ -3009,7 +2556,7 @@ Example format:
     // ── Shelf (grid) view ──
     function renderShelf(indexed) {
       const container = document.getElementById("log");
-      container.innerHTML = `<div class="shelf-grid">${indexed.map(({ entry, index }) => {
+      container.innerHTML = `<div class="shelf-grid">${indexed.map(({ entry, index }) => {  /* artwork from entry.thumbnailUrl if available */
         const title   = getEntryTitle(entry);
         const initial = title.charAt(0).toUpperCase();
         const rawAccent = (TYPE_COLORS[entry.mediaType] || { bg: "#888888" }).bg;
@@ -3025,11 +2572,6 @@ Example format:
           </div>
         </div>`;
       }).join("")}</div>`;
-      // backfill artwork
-      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
-      indexed.forEach(({ entry, index }) => {
-        if (ARTWORK_TYPES.has(entry.mediaType) && entry.thumbnailUrl === undefined) kickArtworkFetch(entry.date, index, entry);
-      });
     }
 
     // ── Diary view ──
@@ -3206,13 +2748,6 @@ Example format:
       saveBacklogData(items);
       toggleBacklogForm();
       renderBacklog();
-      // fetch cover art in background
-      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
-      if (ARTWORK_TYPES_B.has(mediaType)) {
-        fetchMediaArtwork(title, "", mediaType).then(url => {
-          if (url) patchBacklogArtwork(entryDate, url);
-        });
-      }
     }
 
     function patchBacklogArtwork(dateKey, url) {
@@ -3238,10 +2773,6 @@ Example format:
       if (wrap) {
         const btns = wrap.querySelectorAll("button");
         if (btns[1]) btns[1].textContent = "✓ In Backlog";
-      }
-      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
-      if (ARTWORK_TYPES_B.has(mediaType)) {
-        fetchMediaArtwork(title, "", mediaType).then(url => { if (url) patchBacklogArtwork(entryDate, url); });
       }
     }
 
@@ -3530,7 +3061,6 @@ Example format:
     // ── Settings ──
     function openSettings() {
       document.getElementById("settings-anthropic-key").value = getAnthropicKey();
-      document.getElementById("settings-tmdb-key").value      = getTmdbKey();
     }
 
     renderLog();
