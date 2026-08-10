@@ -1245,24 +1245,13 @@
 
     <div class="settings-card">
       <div class="settings-card-title">Games</div>
-      <div class="settings-field">
-        <label>IGDB Client ID</label>
-        <div class="key-row">
-          <input type="password" id="settings-igdb-client-id" placeholder="abc123…"
-            oninput="localStorage.setItem('jdlogs_igdb_client_id', this.value.trim())" />
-        </div>
-      </div>
       <div class="settings-field" style="margin-bottom:0;">
-        <label>IGDB Client Secret</label>
+        <label>RAWG API key</label>
         <div class="key-row">
-          <input type="password" id="settings-igdb-client-secret" placeholder="xyz789…"
-            oninput="localStorage.setItem('jdlogs_igdb_client_secret', this.value.trim())" />
+          <input type="password" id="settings-rawg-key" placeholder="Your RAWG API key…"
+            oninput="localStorage.setItem('jdlogs_rawg_key', this.value.trim())" />
         </div>
-        <p class="key-note">Get credentials at <a href="https://dev.twitch.tv/console" target="_blank">dev.twitch.tv/console</a> → Register App</p>
-      </div>
-      <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="btn-primary" style="padding:8px 16px;font-size:13px;" onclick="testIGDBConnection()">Test Connection</button>
-        <span id="igdb-test-result" style="font-size:12px;color:var(--text4);"></span>
+        <p class="key-note">Get a free key at <a href="https://rawg.io/apidocs" target="_blank">rawg.io/apidocs</a> — click "Get API Key"</p>
       </div>
     </div>
   </div>
@@ -1306,112 +1295,57 @@
       "Book":              { bg: "#ff8c42", border: "none" },
     };
 
-    const TMDB_KEY_KEY           = "jdlogs_tmdb_key";
-    const ANTHROPIC_KEY_KEY      = "jdlogs_anthropic_key";
-    const IGDB_CLIENT_ID_KEY     = "jdlogs_igdb_client_id";
-    const IGDB_CLIENT_SECRET_KEY = "jdlogs_igdb_client_secret";
-    const IGDB_TOKEN_KEY         = "jdlogs_igdb_token";
-    const IGDB_TOKEN_EXPIRY_KEY  = "jdlogs_igdb_token_expiry";
-    function getTmdbKey()          { return localStorage.getItem(TMDB_KEY_KEY)           || ""; }
-    function getAnthropicKey()     { return localStorage.getItem(ANTHROPIC_KEY_KEY)      || ""; }
-    function getIgdbClientId()     { return localStorage.getItem(IGDB_CLIENT_ID_KEY)     || ""; }
-    function getIgdbClientSecret() { return localStorage.getItem(IGDB_CLIENT_SECRET_KEY) || ""; }
+    const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
+    const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
+    const RAWG_KEY_KEY      = "jdlogs_rawg_key";
+    function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
+    function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
+    function getRawgKey()      { return localStorage.getItem(RAWG_KEY_KEY)      || ""; }
 
-    async function getIgdbToken() {
-      const id     = getIgdbClientId();
-      const secret = getIgdbClientSecret();
-      if (!id || !secret) return null;
-      const cached = localStorage.getItem(IGDB_TOKEN_KEY);
-      const expiry = parseInt(localStorage.getItem(IGDB_TOKEN_EXPIRY_KEY) || "0");
-      if (cached && Date.now() < expiry) return cached;
+    // ── RAWG game search (browser-native API with CORS support) ──
+    async function searchRAWG(q) {
+      const key = getRawgKey();
+      if (!key) return [{ title: "Add your RAWG API key in Settings to search games", subtitle: "Tap to open Settings", action: "settings" }];
       try {
-        const res = await fetch(
-          `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}&grant_type=client_credentials`,
-          { method: "POST" }
-        );
-        if (!res.ok) return null;
+        const res = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(q)}&key=${key}&page_size=7`);
+        if (!res.ok) return [{ title: `RAWG error (${res.status}) — check your API key`, subtitle: "Tap to open Settings", action: "settings" }];
         const data = await res.json();
-        if (!data.access_token) return null;
-        localStorage.setItem(IGDB_TOKEN_KEY,        data.access_token);
-        localStorage.setItem(IGDB_TOKEN_EXPIRY_KEY, String(Date.now() + (data.expires_in - 300) * 1000));
-        return data.access_token;
+        return (data.results || []).map(g => ({
+          title:    g.name || "",
+          subtitle: g.released ? g.released.slice(0, 4) : "",
+          rawgSlug: g.slug || null
+        }));
+      } catch {
+        return [{ title: "Game search unavailable — check your RAWG key", subtitle: "Tap to open Settings", action: "settings" }];
+      }
+    }
+
+    async function fetchRAWGGameData(title) {
+      const key = getRawgKey();
+      if (!key) return null;
+      try {
+        const searchRes = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(title)}&key=${key}&page_size=1`);
+        if (!searchRes.ok) return null;
+        const searchData = await searchRes.json();
+        const first = searchData.results?.[0];
+        if (!first) return null;
+        const detailRes = await fetch(`https://api.rawg.io/api/games/${first.slug}?key=${key}`);
+        if (!detailRes.ok) return null;
+        const g = await detailRes.json();
+        return {
+          description: g.description_raw || "",
+          coverUrl:    g.background_image || null,
+          rawgUrl:     `https://rawg.io/games/${first.slug}`
+        };
       } catch { return null; }
     }
 
-    async function testIGDBConnection() {
-      const el = document.getElementById("igdb-test-result");
-      const id     = getIgdbClientId();
-      const secret = getIgdbClientSecret();
-      if (!id || !secret) {
-        el.textContent = "Enter Client ID and Secret first.";
-        el.style.color = "var(--text4)";
-        return;
-      }
-      el.textContent = "Step 1/2: Getting Twitch token…";
-      el.style.color = "var(--text4)";
-      try {
-        const tokenRes = await fetch(
-          `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}&grant_type=client_credentials`,
-          { method: "POST" }
-        );
-        if (!tokenRes.ok) {
-          const body = await tokenRes.text().catch(() => "");
-          el.textContent = `Token request failed (HTTP ${tokenRes.status}): ${body.slice(0, 120)}`;
-          el.style.color = "#e57373";
-          return;
-        }
-        const tokenData = await tokenRes.json();
-        if (!tokenData.access_token) {
-          el.textContent = `No access_token in response: ${JSON.stringify(tokenData).slice(0, 120)}`;
-          el.style.color = "#e57373";
-          return;
-        }
-        // Cache the freshly obtained token
-        localStorage.setItem(IGDB_TOKEN_KEY,        tokenData.access_token);
-        localStorage.setItem(IGDB_TOKEN_EXPIRY_KEY, String(Date.now() + (tokenData.expires_in - 300) * 1000));
-
-        el.textContent = "Step 2/2: Testing IGDB API…";
-        const igdbRes = await fetch("https://api.igdb.com/v4/games", {
-          method: "POST",
-          headers: { "Client-ID": id, "Authorization": `Bearer ${tokenData.access_token}`, "Content-Type": "text/plain" },
-          body: `fields name; limit 1;`
-        });
-        if (!igdbRes.ok) {
-          el.textContent = `IGDB API failed (HTTP ${igdbRes.status})`;
-          el.style.color = "#e57373";
-          return;
-        }
-        const igdbData = await igdbRes.json();
-        el.textContent = `✓ Connected — IGDB returned ${igdbData.length} result(s). Search is ready.`;
-        el.style.color = "#66bb6a";
-      } catch (err) {
-        el.textContent = `Network/CORS error: ${err.message}`;
-        el.style.color = "#e57373";
-      }
-    }
-
-    async function searchIGDB(q) {
-      const clientId = getIgdbClientId();
-      if (!clientId) return [{ title: "Add IGDB credentials in Settings to search games", subtitle: "Tap to open Settings", action: "settings" }];
-      const token = await getIgdbToken();
-      if (!token) return [{ title: "IGDB auth failed — check Client ID and Secret", subtitle: "Tap to open Settings", action: "settings" }];
-      try {
-        const res = await fetch("https://api.igdb.com/v4/games", {
-          method: "POST",
-          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
-          body: `search "${q.replace(/"/g, '\\"')}"; fields name,first_release_date,cover.image_id; limit 7;`
-        });
-        if (!res.ok) return [{ title: `IGDB error (${res.status}) — check your credentials`, subtitle: "Tap to open Settings", action: "settings" }];
-        const data = await res.json();
-        return (data || []).map(g => ({
-          title:    g.name || "",
-          subtitle: g.first_release_date
-            ? new Date(g.first_release_date * 1000).getFullYear().toString()
-            : ""
-        }));
-      } catch (err) {
-        return [{ title: "Game search unavailable — check your IGDB credentials", subtitle: "Tap to open Settings", action: "settings" }];
-      }
+    async function fetchAndStoreRAWGGame(index, title) {
+      const data  = await fetchRAWGGameData(title);
+      const patch = data
+        ? { description: data.description, thumbnailUrl: data.coverUrl || null, wikiUrl: data.rawgUrl || null }
+        : { description: "" };
+      updateEntry(index, patch);
     }
 
     const TYPE_PLURALS = {
@@ -1952,7 +1886,7 @@
       const _extMap = {
         "Film":              { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
         "Television Series": { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
-        "Game":              { fallback: `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`,            label: "IGDB ↗" },
+        "Game":              { fallback: `https://rawg.io/search?query=${encodeURIComponent(title)}`,                    label: "RAWG ↗" },
         "Book":              { fallback: `https://openlibrary.org/search?q=${encodeURIComponent(title)}`,                label: "Open Library ↗" },
       };
       const _ext = _extMap[entry.mediaType];
@@ -1982,7 +1916,7 @@
       } else {
         if (entry.mediaType === "Game") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreIGDBGame(index, title);
+          fetchAndStoreRAWGGame(index, title);
         } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
           fetchAndStoreTMDB(index, title, entry.mediaType);
@@ -1999,7 +1933,7 @@
       if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
         fetchTMDBTrailer(title, entry.mediaType).then(key => renderTrailer(key));
       } else if (entry.mediaType === "Game") {
-        fetchIGDBTrailer(title).then(key => renderTrailer(key));
+        renderTrailer(null);
       }
 
       // User log data
@@ -2290,39 +2224,6 @@
       updateEntry(index, patch);
     }
 
-    async function fetchIGDBGameData(title) {
-      const clientId = getIgdbClientId();
-      if (!clientId) return null;
-      const token = await getIgdbToken();
-      if (!token) return null;
-      try {
-        const res = await fetch("https://api.igdb.com/v4/games", {
-          method: "POST",
-          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
-          body: `search "${title.replace(/"/g, '\\"')}"; fields name,summary,cover.image_id,url; limit 1;`
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        const g = data[0];
-        if (!g) return null;
-        return {
-          description: g.summary || "",
-          coverUrl:    g.cover?.image_id
-            ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg`
-            : null,
-          igdbUrl: g.url || null
-        };
-      } catch { return null; }
-    }
-
-    async function fetchAndStoreIGDBGame(index, title) {
-      const data  = await fetchIGDBGameData(title);
-      const patch = data
-        ? { description: data.description, thumbnailUrl: data.coverUrl || null, wikiUrl: data.igdbUrl || null }
-        : { description: "" };
-      updateEntry(index, patch);
-    }
-
     // ── Manual add ──
     function toggleAddForm() {
       const form    = document.getElementById("manual-form");
@@ -2564,7 +2465,7 @@ Example format:
         if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
-        else if (type === "Game")              apiRaw = await searchIGDB(q);
+        else if (type === "Game")              apiRaw = await searchRAWG(q);
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
         else                                   apiRaw = [];
@@ -2649,26 +2550,6 @@ Example format:
         title:    r.title || "",
         subtitle: (r.author_name || [])[0] || ""
       }));
-    }
-
-    // ── IGDB Trailer ──
-    async function fetchIGDBTrailer(title) {
-      const clientId = getIgdbClientId();
-      if (!clientId) return null;
-      const token = await getIgdbToken();
-      if (!token) return null;
-      try {
-        const res = await fetch("https://api.igdb.com/v4/games", {
-          method: "POST",
-          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
-          body: `search "${title.replace(/"/g, '\\"')}"; fields name,videos.video_id,videos.name; limit 1;`
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        const videos = data[0]?.videos || [];
-        const trailer = videos.find(v => /trailer/i.test(v.name || "")) || videos[0];
-        return trailer?.video_id || null;
-      } catch { return null; }
     }
 
     // ── TMDB Trailer ──
@@ -2761,19 +2642,12 @@ Example format:
           return item?.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null;
         }
         if (mediaType === "Game") {
-          const clientId = getIgdbClientId();
-          if (!clientId) return null;
-          const token = await getIgdbToken();
-          if (!token) return null;
-          const res = await fetch("https://api.igdb.com/v4/games", {
-            method: "POST",
-            headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
-            body: `search "${title.replace(/"/g, '\\"')}"; fields name,cover.image_id; limit 1;`
-          });
+          const key = getRawgKey();
+          if (!key) return null;
+          const res = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(title)}&key=${key}&page_size=1`);
           if (!res.ok) return null;
           const data = await res.json();
-          const coverId = data[0]?.cover?.image_id;
-          return coverId ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${coverId}.jpg` : null;
+          return data.results?.[0]?.background_image || null;
         }
         return null;
       } catch { return null; }
@@ -2903,20 +2777,20 @@ Example format:
       if (resolvedType === "Film" || resolvedType === "Television Series") {
         fetchTMDBTrailer(title, resolvedType).then(key => renderTrailer(key));
       } else if (resolvedType === "Game") {
-        fetchIGDBTrailer(title).then(key => renderTrailer(key));
+        renderTrailer(null);
       }
 
       // Fetch metadata from each type's native source
       const typeTag = knownType ? typeTagHTML(knownType) : "";
       if (resolvedType === "Game") {
-        const igdb = await fetchIGDBGameData(title);
-        if (igdb) {
-          if (igdb.description) { descEl.textContent = igdb.description; descEl.className = "detail-hero-description"; }
+        const rawg = await fetchRAWGGameData(title);
+        if (rawg) {
+          if (rawg.description) { descEl.textContent = rawg.description; descEl.className = "detail-hero-description"; }
           else { descEl.style.display = "none"; }
-          if (igdb.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${igdb.coverUrl}" alt="">`;
-          const igdbLink = igdb.igdbUrl || `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`;
+          if (rawg.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${rawg.coverUrl}" alt="">`;
+          const rawgLink = rawg.rawgUrl || `https://rawg.io/search?query=${encodeURIComponent(title)}`;
           document.getElementById("detail-meta").innerHTML =
-            typeTag + `<a href="${igdbLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">IGDB ↗</a>`;
+            typeTag + `<a href="${rawgLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">RAWG ↗</a>`;
         } else { descEl.style.display = "none"; }
       } else if (resolvedType === "Film" || resolvedType === "Television Series") {
         const tmdb = await fetchTMDBData(title, resolvedType);
@@ -3027,7 +2901,7 @@ Example format:
         if      (type === "Film")              raw = await searchTMDB(q, "movie");
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
-        else if (type === "Game")              raw = await searchIGDB(q);
+        else if (type === "Game")              raw = await searchRAWG(q);
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
         else                                   raw = await searchWikipedia(q);
@@ -3644,10 +3518,9 @@ Example format:
 
     // ── Settings ──
     function openSettings() {
-      document.getElementById("settings-anthropic-key").value      = getAnthropicKey();
-      document.getElementById("settings-tmdb-key").value           = getTmdbKey();
-      document.getElementById("settings-igdb-client-id").value     = getIgdbClientId();
-      document.getElementById("settings-igdb-client-secret").value = getIgdbClientSecret();
+      document.getElementById("settings-anthropic-key").value = getAnthropicKey();
+      document.getElementById("settings-tmdb-key").value      = getTmdbKey();
+      document.getElementById("settings-rawg-key").value      = getRawgKey();
     }
 
     renderLog();
