@@ -1301,13 +1301,13 @@
     async function searchOpenCritic(q) {
       try {
         const res = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(q)}`);
-        if (!res.ok) return [];
+        if (!res.ok) return null; // signal API error
         const data = await res.json();
         return (data || []).slice(0, 7).map(g => ({
           title:    g.name || "",
           subtitle: g.firstReleaseDate ? g.firstReleaseDate.slice(0, 4) : ""
         }));
-      } catch { return []; }
+      } catch { return null; } // signal network/CORS error
     }
 
     async function fetchOpenCriticGameData(title) {
@@ -2466,10 +2466,18 @@ Example format:
         // API results
         const searchArtist = (document.getElementById("search-artist")?.value || "").trim();
         let apiRaw = [];
-        if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
+        if (type === "Film")              apiRaw = await searchTMDB(q, "movie");
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
-        else if (type === "Game")              apiRaw = await searchOpenCritic(q);
+        else if (type === "Game") {
+          const ocResult = await searchOpenCritic(q);
+          if (ocResult === null) {
+            _wikiSearchResults = [];
+            dropdown.innerHTML = `<div class="search-no-results">OpenCritic not reachable — check your connection</div>`;
+            return;
+          }
+          apiRaw = ocResult;
+        }
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
         else                                   apiRaw = [];
@@ -2912,10 +2920,17 @@ Example format:
         if      (type === "Film")              raw = await searchTMDB(q, "movie");
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
-        else if (type === "Game")              raw = await searchOpenCritic(q);
+        else if (type === "Game") {
+          const ocResult = await searchOpenCritic(q);
+          if (ocResult === null) {
+            drop.innerHTML = `<div class="search-no-results">OpenCritic not reachable — check your connection</div>`;
+            return;
+          }
+          raw = ocResult;
+        }
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
-        else                                   raw = await searchWikipedia(q);
+        else                                   raw = [];
 
         _titleSearchResults = raw;
         if (raw.length === 0) {
