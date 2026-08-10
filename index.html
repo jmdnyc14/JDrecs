@@ -1880,15 +1880,18 @@
         posterEl.innerHTML = `<div class="poster-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
       }
 
-      // Meta: type tag + external link
-      const isGame = entry.mediaType === "Game";
-      const extUrl = entry.wikiUrl || (isGame
-        ? `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`
-        : `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`);
-      const extLabel = isGame ? "IGDB ↗" : "Wikipedia ↗";
-      document.getElementById("detail-meta").innerHTML =
-        `${typeTagHTML(entry.mediaType)}
-         <a href="${extUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">${extLabel}</a>`;
+      // Meta: type tag + source link
+      const _extMap = {
+        "Film":              { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
+        "Television Series": { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
+        "Game":              { fallback: `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`,            label: "IGDB ↗" },
+        "Book":              { fallback: `https://openlibrary.org/search?q=${encodeURIComponent(title)}`,                label: "Open Library ↗" },
+      };
+      const _ext = _extMap[entry.mediaType];
+      const _extHtml = _ext
+        ? `<a href="${entry.wikiUrl || _ext.fallback}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">${_ext.label}</a>`
+        : "";
+      document.getElementById("detail-meta").innerHTML = `${typeTagHTML(entry.mediaType)} ${_extHtml}`;
 
       // Title
       document.getElementById("detail-title").textContent = title;
@@ -1909,11 +1912,18 @@
           descEl.style.display = "none";
         }
       } else {
-        descEl.textContent   = "Fetching description…";
-        descEl.className     = "detail-hero-description dim";
-        descEl.style.display = "";
-        if (entry.mediaType === "Game") fetchAndStoreIGDBGame(index, title);
-        else                            fetchAndStoreWiki(index, title);
+        if (entry.mediaType === "Game") {
+          descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
+          fetchAndStoreIGDBGame(index, title);
+        } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
+          descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
+          fetchAndStoreTMDB(index, title, entry.mediaType);
+        } else if (entry.mediaType === "Book") {
+          descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
+          fetchAndStoreOpenLibrary(index, title);
+        } else {
+          descEl.style.display = "none";
+        }
       }
 
       // Trailer
@@ -2155,26 +2165,59 @@
       document.getElementById("detail-title-edit").style.display     = "none";
     }
 
-    // ── Wikipedia fetch ──
-    async function fetchWikipediaData(title) {
+    // ── TMDB data (Film / TV descriptions) ──
+    async function fetchTMDBData(title, mediaType) {
+      const key = getTmdbKey();
+      if (!key) return null;
+      const type = mediaType === "Film" ? "movie" : "tv";
       try {
-        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
-          headers: { "Accept": "application/json" }
-        });
+        const res = await fetch(
+          `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(title)}&limit=1`
+        );
         if (!res.ok) return null;
-        const d = await res.json();
+        const data = await res.json();
+        const item = data.results?.[0];
+        if (!item) return null;
         return {
-          extract:  d.extract  || null,
-          thumbnail: d.thumbnail?.source || null,
-          pageUrl:   d.content_urls?.desktop?.page || null
+          description: item.overview || "",
+          thumbnailUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+          wikiUrl: `https://www.themoviedb.org/${type}/${item.id}`
         };
       } catch { return null; }
     }
 
-    async function fetchAndStoreWiki(index, title) {
-      const wiki  = await fetchWikipediaData(title);
-      const patch = wiki
-        ? { description: wiki.extract || "", thumbnailUrl: wiki.thumbnail || null, wikiUrl: wiki.pageUrl || null }
+    async function fetchAndStoreTMDB(index, title, mediaType) {
+      const data  = await fetchTMDBData(title, mediaType);
+      const patch = data
+        ? { description: data.description, thumbnailUrl: data.thumbnailUrl || null, wikiUrl: data.wikiUrl }
+        : { description: "" };
+      updateEntry(index, patch);
+    }
+
+    // ── OpenLibrary data (Book descriptions) ──
+    async function fetchOpenLibraryData(title) {
+      try {
+        const res = await fetch(
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}&limit=1&fields=title,cover_i,key,first_sentence`
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        const item = data.docs?.[0];
+        if (!item) return null;
+        const desc = typeof item.first_sentence === "object"
+          ? (item.first_sentence?.value || "") : (item.first_sentence || "");
+        return {
+          description: desc,
+          thumbnailUrl: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null,
+          wikiUrl: item.key ? `https://openlibrary.org${item.key}` : null
+        };
+      } catch { return null; }
+    }
+
+    async function fetchAndStoreOpenLibrary(index, title) {
+      const data  = await fetchOpenLibraryData(title);
+      const patch = data
+        ? { description: data.description, thumbnailUrl: data.thumbnailUrl || null, wikiUrl: data.wikiUrl || null }
         : { description: "" };
       updateEntry(index, patch);
     }
@@ -2405,11 +2448,10 @@ Example format:
 
         status.textContent = "";
         results.innerHTML = recs.map((r, i) => {
-          const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(r.title)}&go=Go`;
           return `
             <div class="result-card">
               <div class="result-number">#${i + 1} &mdash; ${esc(r.type)}</div>
-              <div class="result-title"><a href="${wikiUrl}" target="_blank" rel="noopener noreferrer">${esc(r.title)}</a></div>
+              <div class="result-title">${esc(r.title)}</div>
               <div class="result-reason">${esc(r.reason)}</div>
             </div>`;
         }).join("");
@@ -2457,7 +2499,7 @@ Example format:
         else if (type === "Game")              apiRaw = await searchIGDB(q);
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
-        else                                   apiRaw = await searchWikipedia(q);
+        else                                   apiRaw = [];
 
         // Dedup API results vs log
         const logTitles  = new Set(logMatches.map(m => m.title.toLowerCase()));
@@ -2697,14 +2739,6 @@ Example format:
       }));
     }
 
-    async function searchWikipedia(q) {
-      const res  = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=7&utf8=1`
-      );
-      if (!res.ok) return [];
-      const data = await res.json();
-      return (data.query?.search || []).map(r => ({ title: r.title, subtitle: "" }));
-    }
 
     function selectSearchResult(i) {
       const item = _wikiSearchResults[i];
@@ -2762,11 +2796,7 @@ Example format:
       document.getElementById("detail-poster").innerHTML =
         `<div class="poster-fallback" style="background:linear-gradient(160deg,#888,#444)">${initial}</div>`;
       const knownType = currentDetailMediaType;
-      document.getElementById("detail-meta").innerHTML =
-        (knownType ? typeTagHTML(knownType) : "") +
-        (knownType === "Game" ? "" :
-          `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go"
-              target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`);
+      document.getElementById("detail-meta").innerHTML = knownType ? typeTagHTML(knownType) : "";
       document.getElementById("detail-title").textContent      = title;
       document.getElementById("detail-title").style.display    = "";
       document.getElementById("detail-edit-title-btn").style.display = "none";
@@ -2794,40 +2824,38 @@ Example format:
         fetchIGDBTrailer(title).then(key => renderTrailer(key));
       }
 
-      // Fetch metadata — IGDB for games, Wikipedia for everything else
+      // Fetch metadata from each type's native source
+      const typeTag = knownType ? typeTagHTML(knownType) : "";
       if (resolvedType === "Game") {
         const igdb = await fetchIGDBGameData(title);
         if (igdb) {
-          if (igdb.description) {
-            descEl.textContent = igdb.description;
-            descEl.className   = "detail-hero-description";
-          } else { descEl.style.display = "none"; }
-          if (igdb.coverUrl) {
-            document.getElementById("detail-poster").innerHTML =
-              `<img src="${igdb.coverUrl}" alt="">`;
-          }
+          if (igdb.description) { descEl.textContent = igdb.description; descEl.className = "detail-hero-description"; }
+          else { descEl.style.display = "none"; }
+          if (igdb.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${igdb.coverUrl}" alt="">`;
           const igdbLink = igdb.igdbUrl || `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`;
           document.getElementById("detail-meta").innerHTML =
-            (knownType ? typeTagHTML(knownType) : "") +
-            `<a href="${igdbLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">IGDB ↗</a>`;
+            typeTag + `<a href="${igdbLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">IGDB ↗</a>`;
+        } else { descEl.style.display = "none"; }
+      } else if (resolvedType === "Film" || resolvedType === "Television Series") {
+        const tmdb = await fetchTMDBData(title, resolvedType);
+        if (tmdb) {
+          if (tmdb.description) { descEl.textContent = tmdb.description; descEl.className = "detail-hero-description"; }
+          else { descEl.style.display = "none"; }
+          if (tmdb.thumbnailUrl) document.getElementById("detail-poster").innerHTML = `<img src="${tmdb.thumbnailUrl}" alt="">`;
+          document.getElementById("detail-meta").innerHTML =
+            typeTag + `<a href="${tmdb.wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">TMDB ↗</a>`;
+        } else { descEl.style.display = "none"; }
+      } else if (resolvedType === "Book") {
+        const ol = await fetchOpenLibraryData(title);
+        if (ol) {
+          if (ol.description) { descEl.textContent = ol.description; descEl.className = "detail-hero-description"; }
+          else { descEl.style.display = "none"; }
+          if (ol.thumbnailUrl) document.getElementById("detail-poster").innerHTML = `<img src="${ol.thumbnailUrl}" alt="">`;
+          if (ol.wikiUrl) document.getElementById("detail-meta").innerHTML =
+            typeTag + `<a href="${ol.wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Open Library ↗</a>`;
         } else { descEl.style.display = "none"; }
       } else {
-        const wiki = await fetchWikipediaData(title);
-        if (wiki) {
-          if (wiki.extract) {
-            descEl.textContent = wiki.extract;
-            descEl.className   = "detail-hero-description";
-          } else { descEl.style.display = "none"; }
-          if (wiki.thumbnail) {
-            document.getElementById("detail-poster").innerHTML =
-              `<img src="${wiki.thumbnail}" alt="">`;
-          }
-          const wikiUrl = wiki.pageUrl ||
-            `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
-          document.getElementById("detail-meta").innerHTML =
-            (knownType ? typeTagHTML(knownType) : "") +
-            `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
-        } else { descEl.style.display = "none"; }
+        descEl.style.display = "none";
       }
 
       // Show log data if there's a matching entry
