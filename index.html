@@ -373,6 +373,10 @@
       display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
     }
     .detail-wiki-link:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .detail-publisher {
+      font-size: 11px; color: var(--text3); white-space: nowrap;
+      font-style: italic;
+    }
 
     .detail-title-row { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 2px; }
     .detail-title {
@@ -1245,14 +1249,7 @@
 
     <div class="settings-card">
       <div class="settings-card-title">Games</div>
-      <div class="settings-field" style="margin-bottom:0;">
-        <label>RAWG API key</label>
-        <div class="key-row">
-          <input type="password" id="settings-rawg-key" placeholder="Your RAWG API key…"
-            oninput="localStorage.setItem('jdlogs_rawg_key', this.value.trim())" />
-        </div>
-        <p class="key-note">Get a free key at <a href="https://rawg.io/apidocs" target="_blank">rawg.io/apidocs</a> — click "Get API Key"</p>
-      </div>
+      <p class="key-note" style="margin:0;">Powered by <a href="https://opencritic.com" target="_blank" rel="noopener noreferrer">OpenCritic</a> — no API key required. Search, cover art, descriptions, publisher, and trailers work automatically.</p>
     </div>
   </div>
 
@@ -1297,53 +1294,58 @@
 
     const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
     const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
-    const RAWG_KEY_KEY      = "jdlogs_rawg_key";
     function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
     function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
-    function getRawgKey()      { return localStorage.getItem(RAWG_KEY_KEY)      || ""; }
 
-    // ── RAWG game search (browser-native API with CORS support) ──
-    async function searchRAWG(q) {
-      const key = getRawgKey();
-      if (!key) return [{ title: "Add your RAWG API key in Settings to search games", subtitle: "Tap to open Settings", action: "settings" }];
+    // ── OpenCritic game data (no API key required, browser CORS supported) ──
+    async function searchOpenCritic(q) {
       try {
-        const res = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(q)}&key=${key}&page_size=7`);
-        if (!res.ok) return [{ title: `RAWG error (${res.status}) — check your API key`, subtitle: "Tap to open Settings", action: "settings" }];
+        const res = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(q)}`);
+        if (!res.ok) return [];
         const data = await res.json();
-        return (data.results || []).map(g => ({
+        return (data || []).slice(0, 7).map(g => ({
           title:    g.name || "",
-          subtitle: g.released ? g.released.slice(0, 4) : "",
-          rawgSlug: g.slug || null
+          subtitle: g.firstReleaseDate ? g.firstReleaseDate.slice(0, 4) : ""
         }));
-      } catch {
-        return [{ title: "Game search unavailable — check your RAWG key", subtitle: "Tap to open Settings", action: "settings" }];
-      }
+      } catch { return []; }
     }
 
-    async function fetchRAWGGameData(title) {
-      const key = getRawgKey();
-      if (!key) return null;
+    async function fetchOpenCriticGameData(title) {
       try {
-        const searchRes = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(title)}&key=${key}&page_size=1`);
+        const searchRes = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(title)}`);
         if (!searchRes.ok) return null;
         const searchData = await searchRes.json();
-        const first = searchData.results?.[0];
-        if (!first) return null;
-        const detailRes = await fetch(`https://api.rawg.io/api/games/${first.slug}?key=${key}`);
+        const first = searchData?.[0];
+        if (!first?.id) return null;
+
+        const detailRes = await fetch(`https://api.opencritic.com/api/game/${first.id}`);
         if (!detailRes.ok) return null;
         const g = await detailRes.json();
+
+        const publisher = (g.Companies || []).find(c => c.type === "PUBLISHER")?.name
+                       || (g.Companies || [])[0]?.name || null;
+        const trailers  = g.trailers || [];
+        const trailer   = trailers.find(t => /trailer/i.test(t.title || "")) || trailers[0];
+        const coverUrl  = g.images?.banner?.og  || g.images?.banner?.sm
+                       || g.images?.squareBanner?.og || g.images?.square?.og
+                       || g.images?.box?.og || null;
+
         return {
-          description: g.description_raw || "",
-          coverUrl:    g.background_image || null,
-          rawgUrl:     `https://rawg.io/games/${first.slug}`
+          description:    g.description || "",
+          coverUrl,
+          publisher,
+          trailerKey:     trailer?.youtubeVideoId || null,
+          openCriticUrl:  g.url || `https://opencritic.com/game/${first.id}`
         };
       } catch { return null; }
     }
 
-    async function fetchAndStoreRAWGGame(index, title) {
-      const data  = await fetchRAWGGameData(title);
+    async function fetchAndStoreOpenCriticGame(index, title) {
+      const data  = await fetchOpenCriticGameData(title);
       const patch = data
-        ? { description: data.description, thumbnailUrl: data.coverUrl || null, wikiUrl: data.rawgUrl || null }
+        ? { description: data.description, thumbnailUrl: data.coverUrl || null,
+            wikiUrl: data.openCriticUrl || null, publisher: data.publisher || null,
+            trailerKey: data.trailerKey || null }
         : { description: "" };
       updateEntry(index, patch);
     }
@@ -1886,14 +1888,16 @@
       const _extMap = {
         "Film":              { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
         "Television Series": { fallback: "https://www.themoviedb.org/",                                                  label: "TMDB ↗" },
-        "Game":              { fallback: `https://rawg.io/search?query=${encodeURIComponent(title)}`,                    label: "RAWG ↗" },
+        "Game":              { fallback: `https://opencritic.com/browse/all?title=${encodeURIComponent(title)}`,          label: "OpenCritic ↗" },
         "Book":              { fallback: `https://openlibrary.org/search?q=${encodeURIComponent(title)}`,                label: "Open Library ↗" },
       };
       const _ext = _extMap[entry.mediaType];
       const _extHtml = _ext
         ? `<a href="${entry.wikiUrl || _ext.fallback}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">${_ext.label}</a>`
         : "";
-      document.getElementById("detail-meta").innerHTML = `${typeTagHTML(entry.mediaType)} ${_extHtml}`;
+      const _pubHtml = (entry.mediaType === "Game" && entry.publisher)
+        ? `<span class="detail-publisher">by ${esc(entry.publisher)}</span>` : "";
+      document.getElementById("detail-meta").innerHTML = `${typeTagHTML(entry.mediaType)} ${_pubHtml} ${_extHtml}`;
 
       // Title
       document.getElementById("detail-title").textContent = title;
@@ -1916,7 +1920,7 @@
       } else {
         if (entry.mediaType === "Game") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreRAWGGame(index, title);
+          fetchAndStoreOpenCriticGame(index, title);
         } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
           fetchAndStoreTMDB(index, title, entry.mediaType);
@@ -1933,7 +1937,7 @@
       if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
         fetchTMDBTrailer(title, entry.mediaType).then(key => renderTrailer(key));
       } else if (entry.mediaType === "Game") {
-        renderTrailer(null);
+        renderTrailer(entry.trailerKey || null);
       }
 
       // User log data
@@ -2465,7 +2469,7 @@ Example format:
         if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
-        else if (type === "Game")              apiRaw = await searchRAWG(q);
+        else if (type === "Game")              apiRaw = await searchOpenCritic(q);
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
         else                                   apiRaw = [];
@@ -2642,12 +2646,17 @@ Example format:
           return item?.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null;
         }
         if (mediaType === "Game") {
-          const key = getRawgKey();
-          if (!key) return null;
-          const res = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(title)}&key=${key}&page_size=1`);
+          const res = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(title)}`);
           if (!res.ok) return null;
-          const data = await res.json();
-          return data.results?.[0]?.background_image || null;
+          const results = await res.json();
+          const first = results?.[0];
+          if (!first?.id) return null;
+          const detail = await fetch(`https://api.opencritic.com/api/game/${first.id}`);
+          if (!detail.ok) return null;
+          const g = await detail.json();
+          return g.images?.banner?.og || g.images?.banner?.sm
+              || g.images?.squareBanner?.og || g.images?.square?.og
+              || g.images?.box?.og || null;
         }
         return null;
       } catch { return null; }
@@ -2783,14 +2792,16 @@ Example format:
       // Fetch metadata from each type's native source
       const typeTag = knownType ? typeTagHTML(knownType) : "";
       if (resolvedType === "Game") {
-        const rawg = await fetchRAWGGameData(title);
-        if (rawg) {
-          if (rawg.description) { descEl.textContent = rawg.description; descEl.className = "detail-hero-description"; }
+        const oc = await fetchOpenCriticGameData(title);
+        if (oc) {
+          if (oc.description) { descEl.textContent = oc.description; descEl.className = "detail-hero-description"; }
           else { descEl.style.display = "none"; }
-          if (rawg.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${rawg.coverUrl}" alt="">`;
-          const rawgLink = rawg.rawgUrl || `https://rawg.io/search?query=${encodeURIComponent(title)}`;
+          if (oc.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${oc.coverUrl}" alt="">`;
+          const ocLink = oc.openCriticUrl || `https://opencritic.com/browse/all?title=${encodeURIComponent(title)}`;
+          const pubHtml = oc.publisher ? `<span class="detail-publisher">by ${esc(oc.publisher)}</span>` : "";
           document.getElementById("detail-meta").innerHTML =
-            typeTag + `<a href="${rawgLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">RAWG ↗</a>`;
+            typeTag + pubHtml + `<a href="${ocLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">OpenCritic ↗</a>`;
+          if (oc.trailerKey) renderTrailer(oc.trailerKey);
         } else { descEl.style.display = "none"; }
       } else if (resolvedType === "Film" || resolvedType === "Television Series") {
         const tmdb = await fetchTMDBData(title, resolvedType);
@@ -2901,7 +2912,7 @@ Example format:
         if      (type === "Film")              raw = await searchTMDB(q, "movie");
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
-        else if (type === "Game")              raw = await searchRAWG(q);
+        else if (type === "Game")              raw = await searchOpenCritic(q);
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
         else                                   raw = await searchWikipedia(q);
@@ -3520,7 +3531,6 @@ Example format:
     function openSettings() {
       document.getElementById("settings-anthropic-key").value = getAnthropicKey();
       document.getElementById("settings-tmdb-key").value      = getTmdbKey();
-      document.getElementById("settings-rawg-key").value      = getRawgKey();
     }
 
     renderLog();
