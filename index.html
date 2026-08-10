@@ -1260,6 +1260,10 @@
         </div>
         <p class="key-note">Get credentials at <a href="https://dev.twitch.tv/console" target="_blank">dev.twitch.tv/console</a> → Register App</p>
       </div>
+      <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button class="btn-primary" style="padding:8px 16px;font-size:13px;" onclick="testIGDBConnection()">Test Connection</button>
+        <span id="igdb-test-result" style="font-size:12px;color:var(--text4);"></span>
+      </div>
     </div>
   </div>
 
@@ -1332,6 +1336,58 @@
         localStorage.setItem(IGDB_TOKEN_EXPIRY_KEY, String(Date.now() + (data.expires_in - 300) * 1000));
         return data.access_token;
       } catch { return null; }
+    }
+
+    async function testIGDBConnection() {
+      const el = document.getElementById("igdb-test-result");
+      const id     = getIgdbClientId();
+      const secret = getIgdbClientSecret();
+      if (!id || !secret) {
+        el.textContent = "Enter Client ID and Secret first.";
+        el.style.color = "var(--text4)";
+        return;
+      }
+      el.textContent = "Step 1/2: Getting Twitch token…";
+      el.style.color = "var(--text4)";
+      try {
+        const tokenRes = await fetch(
+          `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}&grant_type=client_credentials`,
+          { method: "POST" }
+        );
+        if (!tokenRes.ok) {
+          const body = await tokenRes.text().catch(() => "");
+          el.textContent = `Token request failed (HTTP ${tokenRes.status}): ${body.slice(0, 120)}`;
+          el.style.color = "#e57373";
+          return;
+        }
+        const tokenData = await tokenRes.json();
+        if (!tokenData.access_token) {
+          el.textContent = `No access_token in response: ${JSON.stringify(tokenData).slice(0, 120)}`;
+          el.style.color = "#e57373";
+          return;
+        }
+        // Cache the freshly obtained token
+        localStorage.setItem(IGDB_TOKEN_KEY,        tokenData.access_token);
+        localStorage.setItem(IGDB_TOKEN_EXPIRY_KEY, String(Date.now() + (tokenData.expires_in - 300) * 1000));
+
+        el.textContent = "Step 2/2: Testing IGDB API…";
+        const igdbRes = await fetch("https://api.igdb.com/v4/games", {
+          method: "POST",
+          headers: { "Client-ID": id, "Authorization": `Bearer ${tokenData.access_token}`, "Content-Type": "text/plain" },
+          body: `fields name; limit 1;`
+        });
+        if (!igdbRes.ok) {
+          el.textContent = `IGDB API failed (HTTP ${igdbRes.status})`;
+          el.style.color = "#e57373";
+          return;
+        }
+        const igdbData = await igdbRes.json();
+        el.textContent = `✓ Connected — IGDB returned ${igdbData.length} result(s). Search is ready.`;
+        el.style.color = "#66bb6a";
+      } catch (err) {
+        el.textContent = `Network/CORS error: ${err.message}`;
+        el.style.color = "#e57373";
+      }
     }
 
     async function searchIGDB(q) {
