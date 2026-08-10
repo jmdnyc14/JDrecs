@@ -513,6 +513,16 @@
     }
     .search-result-item:last-child { border-bottom: none; }
     .search-result-item:hover { background: rgba(255,255,255,0.08); }
+    .search-action-item {
+      padding: 10px 14px; cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text4);
+    }
+    .search-action-item:hover { background: rgba(255,255,255,0.08); color: var(--text2); }
+    .search-action-item .action-icon { font-size: 14px; flex-shrink: 0; }
+    .search-action-item .action-label { flex: 1; }
+    .search-action-arrow { font-size: 11px; color: var(--accent); font-weight: 600; flex-shrink: 0; }
 
     .search-result-left {
       display: flex;
@@ -1326,16 +1336,16 @@
 
     async function searchIGDB(q) {
       const clientId = getIgdbClientId();
-      if (!clientId) return [{ title: "Add your IGDB credentials in Settings to search games", subtitle: "" }];
+      if (!clientId) return [{ title: "Add IGDB credentials in Settings to search games", subtitle: "Tap to open Settings", action: "settings" }];
       const token = await getIgdbToken();
-      if (!token) return [{ title: "IGDB auth failed — check your Client ID and Secret in Settings", subtitle: "" }];
+      if (!token) return [{ title: "IGDB auth failed — check Client ID and Secret", subtitle: "Tap to open Settings", action: "settings" }];
       try {
         const res = await fetch("https://api.igdb.com/v4/games", {
           method: "POST",
           headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
           body: `search "${q.replace(/"/g, '\\"')}"; fields name,first_release_date,cover.image_id; limit 7;`
         });
-        if (!res.ok) return [];
+        if (!res.ok) return [{ title: `IGDB error (${res.status}) — check your credentials`, subtitle: "Tap to open Settings", action: "settings" }];
         const data = await res.json();
         return (data || []).map(g => ({
           title:    g.name || "",
@@ -1343,7 +1353,9 @@
             ? new Date(g.first_release_date * 1000).getFullYear().toString()
             : ""
         }));
-      } catch { return []; }
+      } catch (err) {
+        return [{ title: "Game search unavailable — check your IGDB credentials", subtitle: "Tap to open Settings", action: "settings" }];
+      }
     }
 
     const TYPE_PLURALS = {
@@ -2504,8 +2516,8 @@ Example format:
         // Dedup API results vs log
         const logTitles  = new Set(logMatches.map(m => m.title.toLowerCase()));
         const apiResults = apiRaw
-          .filter(r => !logTitles.has(r.title.toLowerCase()))
-          .map(r => ({ title: r.title, subtitle: r.subtitle || "", mediaType: type || null, logIdx: -1, fromLog: false }));
+          .filter(r => r.action || !logTitles.has(r.title.toLowerCase()))
+          .map(r => ({ title: r.title, subtitle: r.subtitle || "", mediaType: type || null, logIdx: -1, fromLog: false, action: r.action || null }));
 
         if (logMatches.length === 0 && apiResults.length === 0) {
           _wikiSearchResults = [];
@@ -2534,6 +2546,16 @@ Example format:
 
     function renderDropdownItem(i) {
       const item    = _wikiSearchResults[i];
+      if (item.action === "settings") {
+        return `<div class="search-action-item" onclick="selectSearchResult(${i})">
+          <span class="action-icon">⚙</span>
+          <div class="action-label">
+            <div style="font-weight:600;color:var(--text2)">${esc(item.title)}</div>
+            ${item.subtitle ? `<div style="font-size:11px;margin-top:2px">${esc(item.subtitle)}</div>` : ""}
+          </div>
+          <span class="search-action-arrow">→</span>
+        </div>`;
+      }
       const entries = loadLog();
       const badge   = item.logIdx !== -1
         ? typeTagHTML(entries[item.logIdx].mediaType)
@@ -2745,6 +2767,10 @@ Example format:
       if (!item) return;
       document.getElementById("search-input").value = "";
       document.getElementById("search-dropdown").style.display = "none";
+      if (item.action === "settings") {
+        showView("settings");
+        return;
+      }
       if (item.logIdx !== -1) {
         currentBackView = "home";
         showView("detail", item.logIdx);
@@ -2956,6 +2982,16 @@ Example format:
           return;
         }
         drop.innerHTML = raw.map((r, i) => {
+          if (r.action === "settings") {
+            return `<div class="search-action-item" onclick="selectTitleResult(${i})">
+              <span class="action-icon">⚙</span>
+              <div class="action-label">
+                <div style="font-weight:600;color:var(--text2)">${esc(r.title)}</div>
+                ${r.subtitle ? `<div style="font-size:11px;margin-top:2px">${esc(r.subtitle)}</div>` : ""}
+              </div>
+              <span class="search-action-arrow">→</span>
+            </div>`;
+          }
           const sub = r.subtitle ? `<span class="search-result-sub">${esc(r.subtitle)}</span>` : "";
           return `<div class="search-result-item" onclick="selectTitleResult(${i})">
             <div class="search-result-left">
@@ -2973,8 +3009,12 @@ Example format:
     function selectTitleResult(i) {
       const item = _titleSearchResults[i];
       if (!item) return;
-      document.getElementById("entry-title").value = item.title;
       document.getElementById("title-dropdown").style.display = "none";
+      if (item.action === "settings") {
+        showView("settings");
+        return;
+      }
+      document.getElementById("entry-title").value = item.title;
     }
 
     // ── AI blurb ──
