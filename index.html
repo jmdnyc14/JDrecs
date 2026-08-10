@@ -607,35 +607,19 @@
     }
     .settings-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
-    .settings-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      z-index: 500; display: flex; align-items: flex-start;
-      justify-content: center; padding: 72px 16px 0;
-    }
-
-    .settings-panel {
-      background: rgba(10,14,30,0.95);
-      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 14px; padding: 22px 24px; width: 100%; max-width: 440px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-
-    .settings-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px;
-    }
-    .settings-title { font-size: 15px; font-weight: 700; color: #f0f0f0; }
-    .settings-close {
-      background: none; border: none; width: auto; padding: 4px 8px;
-      font-size: 16px; color: var(--text4); cursor: pointer; border-radius: 6px;
-    }
-    .settings-close:hover { color: #f0f0f0; background: rgba(255,255,255,0.08); opacity: 1; }
-
-    .settings-field { margin-bottom: 16px; }
+    .settings-field { margin-bottom: 20px; }
     .settings-field label { margin-bottom: 6px; }
     .settings-field .key-row { margin: 6px 0 4px; }
     .settings-field .key-note { margin: 0; }
+
+    .settings-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 22px; margin-bottom: 14px;
+    }
+    .settings-card-title {
+      font-size: 11px; font-weight: 700; color: var(--text4);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;
+    }
 
     /* ── Search section labels ── */
     .search-section-label {
@@ -898,7 +882,7 @@
   <nav id="main-nav">
     <span class="nav-logo" onclick="showView('home')"><span class="logo-accent">jd</span>logs</span>
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+      <button class="settings-btn" onclick="showView('settings')" title="Settings">⚙</button>
       <button class="nav-log-btn" id="nav-stats-btn" onclick="showView('stats')">Stats</button>
       <button class="nav-log-btn" id="nav-lists-btn" onclick="showView('lists')">Lists</button>
       <button class="nav-log-btn" id="nav-backlog-btn" onclick="showView('backlog')">
@@ -911,32 +895,6 @@
       </button>
     </div>
   </nav>
-
-  <!-- ── Settings modal ── -->
-  <div id="settings-overlay" style="display:none;" onclick="closeSettingsOutside(event)">
-    <div class="settings-panel">
-      <div class="settings-header">
-        <span class="settings-title">Settings</span>
-        <button class="settings-close" onclick="closeSettings()">✕</button>
-      </div>
-      <div class="settings-field">
-        <label for="settings-anthropic-key">Anthropic API key</label>
-        <div class="key-row">
-          <input type="password" id="settings-anthropic-key" placeholder="sk-ant-…"
-            oninput="localStorage.setItem('jdlogs_anthropic_key', this.value.trim())" />
-        </div>
-        <p class="key-note">Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</p>
-      </div>
-      <div class="settings-field">
-        <label for="settings-tmdb-key">TMDB API key <span style="font-weight:400;color:var(--text4);">(Film &amp; TV search)</span></label>
-        <div class="key-row">
-          <input type="password" id="settings-tmdb-key" placeholder="b68a…"
-            oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
-        </div>
-        <p class="key-note">Get one at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys</p>
-      </div>
-    </div>
-  </div>
 
   <!-- ── Search bar ── -->
   <div id="search-wrap">
@@ -1246,6 +1204,55 @@
     </div>
   </div>
 
+  <!-- ── Settings view ── -->
+  <div id="view-settings" style="display:none;">
+    <button class="detail-back-btn" onclick="showView('home')">← Back</button>
+    <h2 style="margin:0 0 20px;font-size:20px;font-weight:700;">Settings</h2>
+
+    <div class="settings-card">
+      <div class="settings-card-title">AI Recommendations</div>
+      <div class="settings-field">
+        <label for="settings-anthropic-key">Anthropic API key</label>
+        <div class="key-row">
+          <input type="password" id="settings-anthropic-key" placeholder="sk-ant-…"
+            oninput="localStorage.setItem('jdlogs_anthropic_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</p>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">Film &amp; TV</div>
+      <div class="settings-field">
+        <label for="settings-tmdb-key">TMDB API key</label>
+        <div class="key-row">
+          <input type="password" id="settings-tmdb-key" placeholder="b68a…"
+            oninput="localStorage.setItem('jdlogs_tmdb_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get one at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> → API Keys</p>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">Games</div>
+      <div class="settings-field">
+        <label>IGDB Client ID</label>
+        <div class="key-row">
+          <input type="password" id="settings-igdb-client-id" placeholder="abc123…"
+            oninput="localStorage.setItem('jdlogs_igdb_client_id', this.value.trim())" />
+        </div>
+      </div>
+      <div class="settings-field" style="margin-bottom:0;">
+        <label>IGDB Client Secret</label>
+        <div class="key-row">
+          <input type="password" id="settings-igdb-client-secret" placeholder="xyz789…"
+            oninput="localStorage.setItem('jdlogs_igdb_client_secret', this.value.trim())" />
+        </div>
+        <p class="key-note">Get credentials at <a href="https://dev.twitch.tv/console" target="_blank">dev.twitch.tv/console</a> → Register App</p>
+      </div>
+    </div>
+  </div>
+
   <script>
     const LOG_KEY     = "jdrecs_log";
     const BACKLOG_KEY = "jdrecs_backlog";
@@ -1285,10 +1292,59 @@
       "Book":              { bg: "#ff8c42", border: "none" },
     };
 
-    const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
-    const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
-    function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
-    function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
+    const TMDB_KEY_KEY           = "jdlogs_tmdb_key";
+    const ANTHROPIC_KEY_KEY      = "jdlogs_anthropic_key";
+    const IGDB_CLIENT_ID_KEY     = "jdlogs_igdb_client_id";
+    const IGDB_CLIENT_SECRET_KEY = "jdlogs_igdb_client_secret";
+    const IGDB_TOKEN_KEY         = "jdlogs_igdb_token";
+    const IGDB_TOKEN_EXPIRY_KEY  = "jdlogs_igdb_token_expiry";
+    function getTmdbKey()          { return localStorage.getItem(TMDB_KEY_KEY)           || ""; }
+    function getAnthropicKey()     { return localStorage.getItem(ANTHROPIC_KEY_KEY)      || ""; }
+    function getIgdbClientId()     { return localStorage.getItem(IGDB_CLIENT_ID_KEY)     || ""; }
+    function getIgdbClientSecret() { return localStorage.getItem(IGDB_CLIENT_SECRET_KEY) || ""; }
+
+    async function getIgdbToken() {
+      const id     = getIgdbClientId();
+      const secret = getIgdbClientSecret();
+      if (!id || !secret) return null;
+      const cached = localStorage.getItem(IGDB_TOKEN_KEY);
+      const expiry = parseInt(localStorage.getItem(IGDB_TOKEN_EXPIRY_KEY) || "0");
+      if (cached && Date.now() < expiry) return cached;
+      try {
+        const res = await fetch(
+          `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}&grant_type=client_credentials`,
+          { method: "POST" }
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data.access_token) return null;
+        localStorage.setItem(IGDB_TOKEN_KEY,        data.access_token);
+        localStorage.setItem(IGDB_TOKEN_EXPIRY_KEY, String(Date.now() + (data.expires_in - 300) * 1000));
+        return data.access_token;
+      } catch { return null; }
+    }
+
+    async function searchIGDB(q) {
+      const clientId = getIgdbClientId();
+      if (!clientId) return [{ title: "Add your IGDB credentials in Settings to search games", subtitle: "" }];
+      const token = await getIgdbToken();
+      if (!token) return [{ title: "IGDB auth failed — check your Client ID and Secret in Settings", subtitle: "" }];
+      try {
+        const res = await fetch("https://api.igdb.com/v4/games", {
+          method: "POST",
+          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
+          body: `search "${q.replace(/"/g, '\\"')}"; fields name,first_release_date,cover.image_id; limit 7;`
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data || []).map(g => ({
+          title:    g.name || "",
+          subtitle: g.first_release_date
+            ? new Date(g.first_release_date * 1000).getFullYear().toString()
+            : ""
+        }));
+      } catch { return []; }
+    }
 
     const TYPE_PLURALS = {
       "Movie": "Movies", "TV Show": "TV Shows", "Book": "Books",
@@ -1321,16 +1377,18 @@
 
     // ── View routing ──
     function showView(v, idx) {
-      ["home", "log", "detail", "stats", "backlog", "lists"].forEach(name => {
+      ["home", "log", "detail", "stats", "backlog", "lists", "settings"].forEach(name => {
         document.getElementById(`view-${name}`).style.display = name === v ? "" : "none";
       });
+      document.getElementById("search-wrap").style.display = v === "settings" ? "none" : "";
       document.getElementById("nav-log-btn").classList.toggle("active", v === "log" || v === "detail");
       document.getElementById("nav-stats-btn").classList.toggle("active", v === "stats");
       document.getElementById("nav-backlog-btn").classList.toggle("active", v === "backlog");
       document.getElementById("nav-lists-btn").classList.toggle("active", v === "lists");
-      if (v === "stats")   renderStats();
-      if (v === "backlog") renderBacklog();
-      if (v === "lists")   renderListsIndex();
+      if (v === "stats")    renderStats();
+      if (v === "backlog")  renderBacklog();
+      if (v === "lists")    renderListsIndex();
+      if (v === "settings") openSettings();
       if (v === "detail" && idx !== undefined) {
         currentDetailIndex = idx;
         currentDetailTitle = null;
@@ -1738,7 +1796,7 @@
       });
 
       // Backfill artwork for entries that haven't been fetched yet
-      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
       indexed.forEach(({ entry, index }) => {
         if (ARTWORK_TYPES.has(entry.mediaType) && entry.thumbnailUrl === undefined) {
           kickArtworkFetch(entry.date, index, entry);
@@ -1853,10 +1911,12 @@
         fetchAndStoreWiki(index, title);
       }
 
-      // Trailer (Film / TV only)
+      // Trailer
       document.getElementById("detail-trailer").innerHTML = "";
       if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
         fetchTMDBTrailer(title, entry.mediaType).then(key => renderTrailer(key));
+      } else if (entry.mediaType === "Game") {
+        fetchIGDBTrailer(title).then(key => renderTrailer(key));
       }
 
       // User log data
@@ -2161,7 +2221,7 @@
       toggleAddForm();
       renderLog();
       // Fire-and-forget artwork for supported types
-      const ARTWORK_TYPES_M = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const ARTWORK_TYPES_M = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
       if (title && ARTWORK_TYPES_M.has(mediaType)) {
         fetchMediaArtwork(title, "", mediaType).then(url => {
           if (url) patchEntryArtwork(entryDate, url);
@@ -2275,7 +2335,7 @@ Example format:
 [{"title":"...","type":"Film","reason":"..."},...]`;
 
       // Fetch artwork in parallel with AI call (for types that have cover art)
-      const ARTWORK_TYPES_SET = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const ARTWORK_TYPES_SET = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
       const artworkPromise = (title && ARTWORK_TYPES_SET.has(mediaType))
         ? fetchMediaArtwork(title, (document.getElementById("entry-artist")?.value || "").trim(), mediaType)
         : Promise.resolve(undefined);
@@ -2356,6 +2416,7 @@ Example format:
         if      (type === "Film")              apiRaw = await searchTMDB(q, "movie");
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
+        else if (type === "Game")              apiRaw = await searchIGDB(q);
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
         else                                   apiRaw = await searchWikipedia(q);
@@ -2430,6 +2491,26 @@ Example format:
         title:    r.title || "",
         subtitle: (r.author_name || [])[0] || ""
       }));
+    }
+
+    // ── IGDB Trailer ──
+    async function fetchIGDBTrailer(title) {
+      const clientId = getIgdbClientId();
+      if (!clientId) return null;
+      const token = await getIgdbToken();
+      if (!token) return null;
+      try {
+        const res = await fetch("https://api.igdb.com/v4/games", {
+          method: "POST",
+          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
+          body: `search "${title.replace(/"/g, '\\"')}"; fields name,videos.video_id,videos.name; limit 1;`
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const videos = data[0]?.videos || [];
+        const trailer = videos.find(v => /trailer/i.test(v.name || "")) || videos[0];
+        return trailer?.video_id || null;
+      } catch { return null; }
     }
 
     // ── TMDB Trailer ──
@@ -2520,6 +2601,21 @@ Example format:
           const data = await res.json();
           const item = data.docs?.find(d => d.cover_i);
           return item?.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null;
+        }
+        if (mediaType === "Game") {
+          const clientId = getIgdbClientId();
+          if (!clientId) return null;
+          const token = await getIgdbToken();
+          if (!token) return null;
+          const res = await fetch("https://api.igdb.com/v4/games", {
+            method: "POST",
+            headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
+            body: `search "${title.replace(/"/g, '\\"')}"; fields name,cover.image_id; limit 1;`
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          const coverId = data[0]?.cover?.image_id;
+          return coverId ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${coverId}.jpg` : null;
         }
         return null;
       } catch { return null; }
@@ -2649,13 +2745,15 @@ Example format:
       descEl.className   = "detail-hero-description dim";
       descEl.style.display = "";
 
-      // Trailer (Film / TV only) — resolve type from log if not known from search
+      // Trailer — resolve type from known type or log entry
       document.getElementById("detail-trailer").innerHTML = "";
-      const trailerType = (knownType === "Film" || knownType === "Television Series") ? knownType : (() => {
-        const matched = loadLog().find(e => getEntryTitle(e).toLowerCase() === title.toLowerCase());
-        return (matched?.mediaType === "Film" || matched?.mediaType === "Television Series") ? matched.mediaType : null;
-      })();
-      if (trailerType) fetchTMDBTrailer(title, trailerType).then(key => renderTrailer(key));
+      const resolvedType = knownType ||
+        loadLog().find(e => getEntryTitle(e).toLowerCase() === title.toLowerCase())?.mediaType || null;
+      if (resolvedType === "Film" || resolvedType === "Television Series") {
+        fetchTMDBTrailer(title, resolvedType).then(key => renderTrailer(key));
+      } else if (resolvedType === "Game") {
+        fetchIGDBTrailer(title).then(key => renderTrailer(key));
+      }
 
       // Fetch Wikipedia
       const wiki = await fetchWikipediaData(title);
@@ -2762,6 +2860,7 @@ Example format:
         if      (type === "Film")              raw = await searchTMDB(q, "movie");
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
+        else if (type === "Game")              raw = await searchIGDB(q);
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
         else                                   raw = await searchWikipedia(q);
@@ -2861,7 +2960,7 @@ Example format:
         </div>`;
       }).join("")}</div>`;
       // backfill artwork
-      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const ARTWORK_TYPES = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
       indexed.forEach(({ entry, index }) => {
         if (ARTWORK_TYPES.has(entry.mediaType) && entry.thumbnailUrl === undefined) kickArtworkFetch(entry.date, index, entry);
       });
@@ -3042,7 +3141,7 @@ Example format:
       toggleBacklogForm();
       renderBacklog();
       // fetch cover art in background
-      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
       if (ARTWORK_TYPES_B.has(mediaType)) {
         fetchMediaArtwork(title, "", mediaType).then(url => {
           if (url) patchBacklogArtwork(entryDate, url);
@@ -3074,7 +3173,7 @@ Example format:
         const btns = wrap.querySelectorAll("button");
         if (btns[1]) btns[1].textContent = "✓ In Backlog";
       }
-      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album"]);
+      const ARTWORK_TYPES_B = new Set(["Film", "Television Series", "Book", "Song", "Album", "Game"]);
       if (ARTWORK_TYPES_B.has(mediaType)) {
         fetchMediaArtwork(title, "", mediaType).then(url => { if (url) patchBacklogArtwork(entryDate, url); });
       }
@@ -3364,15 +3463,10 @@ Example format:
 
     // ── Settings ──
     function openSettings() {
-      document.getElementById("settings-anthropic-key").value = getAnthropicKey();
-      document.getElementById("settings-tmdb-key").value      = getTmdbKey();
-      document.getElementById("settings-overlay").style.display = "flex";
-    }
-    function closeSettings() {
-      document.getElementById("settings-overlay").style.display = "none";
-    }
-    function closeSettingsOutside(e) {
-      if (e.target === document.getElementById("settings-overlay")) closeSettings();
+      document.getElementById("settings-anthropic-key").value      = getAnthropicKey();
+      document.getElementById("settings-tmdb-key").value           = getTmdbKey();
+      document.getElementById("settings-igdb-client-id").value     = getIgdbClientId();
+      document.getElementById("settings-igdb-client-secret").value = getIgdbClientSecret();
     }
 
     renderLog();
