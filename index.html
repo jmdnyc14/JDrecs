@@ -1880,11 +1880,15 @@
         posterEl.innerHTML = `<div class="poster-fallback" style="background:linear-gradient(160deg,${accent},${darkenHex(accent,0.52)})">${initial}</div>`;
       }
 
-      // Meta: type tag + wiki link
-      const wikiUrl = entry.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
+      // Meta: type tag + external link
+      const isGame = entry.mediaType === "Game";
+      const extUrl = entry.wikiUrl || (isGame
+        ? `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`
+        : `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`);
+      const extLabel = isGame ? "IGDB ↗" : "Wikipedia ↗";
       document.getElementById("detail-meta").innerHTML =
         `${typeTagHTML(entry.mediaType)}
-         <a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+         <a href="${extUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">${extLabel}</a>`;
 
       // Title
       document.getElementById("detail-title").textContent = title;
@@ -1908,7 +1912,8 @@
         descEl.textContent   = "Fetching description…";
         descEl.className     = "detail-hero-description dim";
         descEl.style.display = "";
-        fetchAndStoreWiki(index, title);
+        if (entry.mediaType === "Game") fetchAndStoreIGDBGame(index, title);
+        else                            fetchAndStoreWiki(index, title);
       }
 
       // Trailer
@@ -2170,6 +2175,39 @@
       const wiki  = await fetchWikipediaData(title);
       const patch = wiki
         ? { description: wiki.extract || "", thumbnailUrl: wiki.thumbnail || null, wikiUrl: wiki.pageUrl || null }
+        : { description: "" };
+      updateEntry(index, patch);
+    }
+
+    async function fetchIGDBGameData(title) {
+      const clientId = getIgdbClientId();
+      if (!clientId) return null;
+      const token = await getIgdbToken();
+      if (!token) return null;
+      try {
+        const res = await fetch("https://api.igdb.com/v4/games", {
+          method: "POST",
+          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
+          body: `search "${title.replace(/"/g, '\\"')}"; fields name,summary,cover.image_id,url; limit 1;`
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const g = data[0];
+        if (!g) return null;
+        return {
+          description: g.summary || "",
+          coverUrl:    g.cover?.image_id
+            ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg`
+            : null,
+          igdbUrl: g.url || null
+        };
+      } catch { return null; }
+    }
+
+    async function fetchAndStoreIGDBGame(index, title) {
+      const data  = await fetchIGDBGameData(title);
+      const patch = data
+        ? { description: data.description, thumbnailUrl: data.coverUrl || null, wikiUrl: data.igdbUrl || null }
         : { description: "" };
       updateEntry(index, patch);
     }
@@ -2726,8 +2764,9 @@ Example format:
       const knownType = currentDetailMediaType;
       document.getElementById("detail-meta").innerHTML =
         (knownType ? typeTagHTML(knownType) : "") +
-        `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go"
-            target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+        (knownType === "Game" ? "" :
+          `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go"
+              target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`);
       document.getElementById("detail-title").textContent      = title;
       document.getElementById("detail-title").style.display    = "";
       document.getElementById("detail-edit-title-btn").style.display = "none";
@@ -2755,23 +2794,41 @@ Example format:
         fetchIGDBTrailer(title).then(key => renderTrailer(key));
       }
 
-      // Fetch Wikipedia
-      const wiki = await fetchWikipediaData(title);
-      if (wiki) {
-        if (wiki.extract) {
-          descEl.textContent = wiki.extract;
-          descEl.className   = "detail-hero-description";
+      // Fetch metadata — IGDB for games, Wikipedia for everything else
+      if (resolvedType === "Game") {
+        const igdb = await fetchIGDBGameData(title);
+        if (igdb) {
+          if (igdb.description) {
+            descEl.textContent = igdb.description;
+            descEl.className   = "detail-hero-description";
+          } else { descEl.style.display = "none"; }
+          if (igdb.coverUrl) {
+            document.getElementById("detail-poster").innerHTML =
+              `<img src="${igdb.coverUrl}" alt="">`;
+          }
+          const igdbLink = igdb.igdbUrl || `https://www.igdb.com/search?type=1&q=${encodeURIComponent(title)}`;
+          document.getElementById("detail-meta").innerHTML =
+            (knownType ? typeTagHTML(knownType) : "") +
+            `<a href="${igdbLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">IGDB ↗</a>`;
         } else { descEl.style.display = "none"; }
-
-        if (wiki.thumbnail) {
-          document.getElementById("detail-poster").innerHTML =
-            `<img src="${wiki.thumbnail}" alt="">`;
-        }
-        const wikiUrl = wiki.pageUrl ||
-          `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
-        document.getElementById("detail-meta").innerHTML =
-          `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
-      } else { descEl.style.display = "none"; }
+      } else {
+        const wiki = await fetchWikipediaData(title);
+        if (wiki) {
+          if (wiki.extract) {
+            descEl.textContent = wiki.extract;
+            descEl.className   = "detail-hero-description";
+          } else { descEl.style.display = "none"; }
+          if (wiki.thumbnail) {
+            document.getElementById("detail-poster").innerHTML =
+              `<img src="${wiki.thumbnail}" alt="">`;
+          }
+          const wikiUrl = wiki.pageUrl ||
+            `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}&go=Go`;
+          document.getElementById("detail-meta").innerHTML =
+            (knownType ? typeTagHTML(knownType) : "") +
+            `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Wikipedia ↗</a>`;
+        } else { descEl.style.display = "none"; }
+      }
 
       // Show log data if there's a matching entry
       const entries = loadLog();
