@@ -1249,7 +1249,14 @@
 
     <div class="settings-card">
       <div class="settings-card-title">Games</div>
-      <p class="key-note" style="margin:0;">Powered by <a href="https://opencritic.com" target="_blank" rel="noopener noreferrer">OpenCritic</a> — no API key required. Search, cover art, descriptions, publisher, and trailers work automatically.</p>
+      <div class="settings-field">
+        <label for="settings-rawg-key">RAWG API key</label>
+        <div class="key-row">
+          <input type="password" id="settings-rawg-key" placeholder="your-rawg-key…"
+            oninput="localStorage.setItem('jdlogs_rawg_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get a free key at <a href="https://rawg.io/apidocs" target="_blank">rawg.io/apidocs</a> — free tier, no credit card</p>
+      </div>
     </div>
   </div>
 
@@ -1294,58 +1301,70 @@
 
     const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
     const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
+    const RAWG_KEY_KEY      = "jdlogs_rawg_key";
     function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
     function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
+    function getRawgKey()      { return localStorage.getItem(RAWG_KEY_KEY)      || ""; }
 
-    // ── OpenCritic game data (no API key required, browser CORS supported) ──
-    async function searchOpenCritic(q) {
+    // ── RAWG.io game data (free API key at rawg.io/apidocs) ──
+    async function searchRAWG(q) {
+      const key = getRawgKey();
+      if (!key) return [{ title: "Add your RAWG API key in Settings to search games", subtitle: "", action: "settings" }];
       try {
-        const res = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(q)}`);
-        if (!res.ok) return null; // signal API error
+        const res = await fetch(`https://api.rawg.io/api/games?key=${encodeURIComponent(key)}&search=${encodeURIComponent(q)}&page_size=7`);
+        if (!res.ok) return null;
         const data = await res.json();
-        return (data || []).slice(0, 7).map(g => ({
+        return (data.results || []).map(g => ({
           title:    g.name || "",
-          subtitle: g.firstReleaseDate ? g.firstReleaseDate.slice(0, 4) : ""
+          subtitle: g.released ? g.released.slice(0, 4) : ""
         }));
-      } catch { return null; } // signal network/CORS error
+      } catch { return null; }
     }
 
-    async function fetchOpenCriticGameData(title) {
+    async function fetchRAWGGameData(title) {
+      const key = getRawgKey();
+      if (!key) return null;
       try {
-        const searchRes = await fetch(`https://api.opencritic.com/api/game/search?criteria=${encodeURIComponent(title)}`);
+        const searchRes = await fetch(`https://api.rawg.io/api/games?key=${encodeURIComponent(key)}&search=${encodeURIComponent(title)}&page_size=1`);
         if (!searchRes.ok) return null;
         const searchData = await searchRes.json();
-        const first = searchData?.[0];
+        const first = searchData?.results?.[0];
         if (!first?.id) return null;
 
-        const detailRes = await fetch(`https://api.opencritic.com/api/game/${first.id}`);
+        const detailRes = await fetch(`https://api.rawg.io/api/games/${first.id}?key=${encodeURIComponent(key)}`);
         if (!detailRes.ok) return null;
         const g = await detailRes.json();
 
-        const publisher = (g.Companies || []).find(c => c.type === "PUBLISHER")?.name
-                       || (g.Companies || [])[0]?.name || null;
-        const trailers  = g.trailers || [];
-        const trailer   = trailers.find(t => /trailer/i.test(t.title || "")) || trailers[0];
-        const coverUrl  = g.images?.banner?.og  || g.images?.banner?.sm
-                       || g.images?.squareBanner?.og || g.images?.square?.og
-                       || g.images?.box?.og || null;
+        const publisher = (g.publishers || [])[0]?.name || null;
+        const coverUrl  = g.background_image || null;
+
+        // Try to get trailer (direct video URL from RAWG)
+        let trailerVideoUrl = null;
+        try {
+          const movRes = await fetch(`https://api.rawg.io/api/games/${first.id}/movies?key=${encodeURIComponent(key)}`);
+          if (movRes.ok) {
+            const movData = await movRes.json();
+            const clip = movData?.results?.[0];
+            if (clip) trailerVideoUrl = clip.data?.max || clip.data?.["480"] || null;
+          }
+        } catch { /* no trailer */ }
 
         return {
-          description:    g.description || "",
+          description: g.description_raw || "",
           coverUrl,
           publisher,
-          trailerKey:     trailer?.youtubeVideoId || null,
-          openCriticUrl:  g.url || `https://opencritic.com/game/${first.id}`
+          trailerVideoUrl,
+          rawgUrl: `https://rawg.io/games/${g.slug || first.id}`
         };
       } catch { return null; }
     }
 
-    async function fetchAndStoreOpenCriticGame(index, title) {
-      const data  = await fetchOpenCriticGameData(title);
+    async function fetchAndStoreRAWGGame(index, title) {
+      const data  = await fetchRAWGGameData(title);
       const patch = data
         ? { description: data.description, thumbnailUrl: data.coverUrl || null,
-            wikiUrl: data.openCriticUrl || null, publisher: data.publisher || null,
-            trailerKey: data.trailerKey || null }
+            wikiUrl: data.rawgUrl || null, publisher: data.publisher || null,
+            trailerVideoUrl: data.trailerVideoUrl || null }
         : { description: "" };
       updateEntry(index, patch);
     }
@@ -1920,7 +1939,7 @@
       } else {
         if (entry.mediaType === "Game") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreOpenCriticGame(index, title);
+          fetchAndStoreRAWGGame(index, title);
         } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
           fetchAndStoreTMDB(index, title, entry.mediaType);
@@ -1937,7 +1956,8 @@
       if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
         fetchTMDBTrailer(title, entry.mediaType).then(key => renderTrailer(key));
       } else if (entry.mediaType === "Game") {
-        renderTrailer(entry.trailerKey || null);
+        if (entry.trailerVideoUrl) renderVideoTrailer(entry.trailerVideoUrl);
+        else renderTrailer(entry.trailerKey || null);
       }
 
       // User log data
@@ -2470,13 +2490,13 @@ Example format:
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
         else if (type === "Game") {
-          const ocResult = await searchOpenCritic(q);
-          if (ocResult === null) {
+          const rawgResult = await searchRAWG(q);
+          if (rawgResult === null) {
             _wikiSearchResults = [];
-            dropdown.innerHTML = `<div class="search-no-results">OpenCritic not reachable — check your connection</div>`;
+            dropdown.innerHTML = `<div class="search-no-results">RAWG search failed — check your API key in Settings</div>`;
             return;
           }
-          apiRaw = ocResult;
+          apiRaw = rawgResult;
         }
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
@@ -2606,6 +2626,23 @@ Example format:
                 allowfullscreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
               </iframe>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderVideoTrailer(videoUrl) {
+      const el = document.getElementById("detail-trailer");
+      if (!el || !videoUrl) return;
+      el.innerHTML = `
+        <div class="trailer-wrap" id="trailer-wrap">
+          <div class="trailer-wrap-header" onclick="toggleTrailer()">
+            <span>Trailer</span>
+            <span class="trailer-arrow">▾</span>
+          </div>
+          <div class="trailer-body">
+            <div class="trailer-embed">
+              <video src="${videoUrl}" controls preload="none" style="width:100%;height:100%;border-radius:4px;"></video>
             </div>
           </div>
         </div>`;
@@ -2793,23 +2830,21 @@ Example format:
         loadLog().find(e => getEntryTitle(e).toLowerCase() === title.toLowerCase())?.mediaType || null;
       if (resolvedType === "Film" || resolvedType === "Television Series") {
         fetchTMDBTrailer(title, resolvedType).then(key => renderTrailer(key));
-      } else if (resolvedType === "Game") {
-        renderTrailer(null);
       }
 
       // Fetch metadata from each type's native source
       const typeTag = knownType ? typeTagHTML(knownType) : "";
       if (resolvedType === "Game") {
-        const oc = await fetchOpenCriticGameData(title);
-        if (oc) {
-          if (oc.description) { descEl.textContent = oc.description; descEl.className = "detail-hero-description"; }
+        const gd = await fetchRAWGGameData(title);
+        if (gd) {
+          if (gd.description) { descEl.textContent = gd.description; descEl.className = "detail-hero-description"; }
           else { descEl.style.display = "none"; }
-          if (oc.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${oc.coverUrl}" alt="">`;
-          const ocLink = oc.openCriticUrl || `https://opencritic.com/browse/all?title=${encodeURIComponent(title)}`;
-          const pubHtml = oc.publisher ? `<span class="detail-publisher">by ${esc(oc.publisher)}</span>` : "";
+          if (gd.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${gd.coverUrl}" alt="">`;
+          const rawgLink = gd.rawgUrl || `https://rawg.io/search?query=${encodeURIComponent(title)}`;
+          const pubHtml = gd.publisher ? `<span class="detail-publisher">by ${esc(gd.publisher)}</span>` : "";
           document.getElementById("detail-meta").innerHTML =
-            typeTag + pubHtml + `<a href="${ocLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">OpenCritic ↗</a>`;
-          if (oc.trailerKey) renderTrailer(oc.trailerKey);
+            typeTag + pubHtml + `<a href="${rawgLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">RAWG ↗</a>`;
+          if (gd.trailerVideoUrl) renderVideoTrailer(gd.trailerVideoUrl);
         } else { descEl.style.display = "none"; }
       } else if (resolvedType === "Film" || resolvedType === "Television Series") {
         const tmdb = await fetchTMDBData(title, resolvedType);
@@ -2921,12 +2956,12 @@ Example format:
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
         else if (type === "Game") {
-          const ocResult = await searchOpenCritic(q);
-          if (ocResult === null) {
-            drop.innerHTML = `<div class="search-no-results">OpenCritic not reachable — check your connection</div>`;
+          const rawgResult = await searchRAWG(q);
+          if (rawgResult === null) {
+            drop.innerHTML = `<div class="search-no-results">RAWG search failed — check your API key in Settings</div>`;
             return;
           }
-          raw = ocResult;
+          raw = rawgResult;
         }
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
@@ -3546,6 +3581,7 @@ Example format:
     function openSettings() {
       document.getElementById("settings-anthropic-key").value = getAnthropicKey();
       document.getElementById("settings-tmdb-key").value      = getTmdbKey();
+      document.getElementById("settings-rawg-key").value      = getRawgKey();
     }
 
     renderLog();
