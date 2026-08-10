@@ -1916,10 +1916,12 @@
         fetchAndStoreWiki(index, title);
       }
 
-      // Trailer (Film / TV only)
+      // Trailer
       document.getElementById("detail-trailer").innerHTML = "";
       if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
         fetchTMDBTrailer(title, entry.mediaType).then(key => renderTrailer(key));
+      } else if (entry.mediaType === "Game") {
+        fetchIGDBTrailer(title).then(key => renderTrailer(key));
       }
 
       // User log data
@@ -2496,6 +2498,26 @@ Example format:
       }));
     }
 
+    // ── IGDB Trailer ──
+    async function fetchIGDBTrailer(title) {
+      const clientId = getIgdbClientId();
+      if (!clientId) return null;
+      const token = await getIgdbToken();
+      if (!token) return null;
+      try {
+        const res = await fetch("https://api.igdb.com/v4/games", {
+          method: "POST",
+          headers: { "Client-ID": clientId, "Authorization": `Bearer ${token}`, "Content-Type": "text/plain" },
+          body: `search "${title.replace(/"/g, '\\"')}"; fields name,videos.video_id,videos.name; limit 1;`
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const videos = data[0]?.videos || [];
+        const trailer = videos.find(v => /trailer/i.test(v.name || "")) || videos[0];
+        return trailer?.video_id || null;
+      } catch { return null; }
+    }
+
     // ── TMDB Trailer ──
     async function fetchTMDBTrailer(title, mediaType) {
       const key = getTmdbKey();
@@ -2728,13 +2750,15 @@ Example format:
       descEl.className   = "detail-hero-description dim";
       descEl.style.display = "";
 
-      // Trailer (Film / TV only) — resolve type from log if not known from search
+      // Trailer — resolve type from known type or log entry
       document.getElementById("detail-trailer").innerHTML = "";
-      const trailerType = (knownType === "Film" || knownType === "Television Series") ? knownType : (() => {
-        const matched = loadLog().find(e => getEntryTitle(e).toLowerCase() === title.toLowerCase());
-        return (matched?.mediaType === "Film" || matched?.mediaType === "Television Series") ? matched.mediaType : null;
-      })();
-      if (trailerType) fetchTMDBTrailer(title, trailerType).then(key => renderTrailer(key));
+      const resolvedType = knownType ||
+        loadLog().find(e => getEntryTitle(e).toLowerCase() === title.toLowerCase())?.mediaType || null;
+      if (resolvedType === "Film" || resolvedType === "Television Series") {
+        fetchTMDBTrailer(title, resolvedType).then(key => renderTrailer(key));
+      } else if (resolvedType === "Game") {
+        fetchIGDBTrailer(title).then(key => renderTrailer(key));
+      }
 
       // Fetch Wikipedia
       const wiki = await fetchWikipediaData(title);
