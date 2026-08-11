@@ -1249,7 +1249,7 @@
 
     <div class="settings-card">
       <div class="settings-card-title">Games</div>
-      <p class="key-note" style="margin:0;">Powered by the <a href="https://store.steampowered.com" target="_blank" rel="noopener noreferrer">Steam Store</a> — no API key required. Search, cover art, descriptions, publisher, and trailers pulled automatically.</p>
+      <p class="key-note" style="margin:0;">Powered by <a href="https://www.wikidata.org" target="_blank" rel="noopener noreferrer">Wikidata</a> + <a href="https://en.wikipedia.org" target="_blank" rel="noopener noreferrer">Wikipedia</a> — no API key required. Search, cover art (via Steam CDN), descriptions, and publisher pulled automatically.</p>
     </div>
   </div>
 
@@ -1298,56 +1298,93 @@
     function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
 
     // ── Steam Store game data (no API key required) ──
-    async function searchSteam(q) {
+    // ── Wikidata + Wikipedia game data (no API key, full browser CORS) ──
+    async function searchWikidata(q) {
       try {
-        const res = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(q)}&l=english&cc=US`);
+        const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&type=item&language=en&format=json&origin=*&limit=20`;
+        const res = await fetch(url);
         if (!res.ok) return null;
         const data = await res.json();
-        return (data.items || []).slice(0, 7).map(g => ({
-          title:    g.name || "",
-          subtitle: ""
+        const games = (data.search || [])
+          .filter(item => /game|rpg|fps|action|adventure|strategy|simulation|sport|puzzle|platform/i.test(item.description || ""))
+          .slice(0, 7)
+          .map(item => ({
+            title:    item.label || "",
+            subtitle: (item.description || "").replace(/^(20\d\d|19\d\d)\s+/i, "").replace(/video game/i, "game"),
+            _qid:     item.id
+          }));
+        return games.length ? games : (data.search || []).slice(0, 5).map(item => ({
+          title:    item.label || "",
+          subtitle: item.description || "",
+          _qid:     item.id
         }));
       } catch { return null; }
     }
 
-    async function fetchSteamGameData(title) {
+    async function fetchWikidataGameData(title) {
       try {
-        const searchRes = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(title)}&l=english&cc=US`);
+        // Step 1: find Wikidata entity for this game
+        const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(title)}&type=item&language=en&format=json&origin=*&limit=5`;
+        const searchRes = await fetch(searchUrl);
         if (!searchRes.ok) return null;
         const searchData = await searchRes.json();
-        const first = searchData?.items?.[0];
-        if (!first?.id) return null;
+        const item = (searchData.search || []).find(i =>
+          /game|rpg|fps|action|adventure|strategy|simulation|sport|puzzle|platform/i.test(i.description || "")
+        ) || searchData.search?.[0];
+        if (!item?.id) return null;
+        const qid = item.id;
 
-        const detailRes = await fetch(`https://store.steampowered.com/api/appdetails?appids=${first.id}&l=english`);
-        if (!detailRes.ok) return null;
-        const detailData = await detailRes.json();
-        const appData = detailData?.[String(first.id)]?.data;
-        if (!appData) return null;
+        // Step 2: SPARQL for publisher + Steam App ID
+        const sparql = `SELECT ?publisherLabel ?steamId WHERE {
+          OPTIONAL { wd:${qid} wdt:P123 ?publisher. }
+          OPTIONAL { wd:${qid} wdt:P1733 ?steamId. }
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        } LIMIT 1`;
+        let publisher = null, steamId = null;
+        try {
+          const sparqlRes = await fetch(
+            `https://query.wikidata.org/sparql?query=${encodeURIComponent(sparql)}&format=json`,
+            { headers: { Accept: "application/sparql-results+json" } }
+          );
+          if (sparqlRes.ok) {
+            const sparqlData = await sparqlRes.json();
+            const b = sparqlData?.results?.bindings?.[0];
+            publisher = b?.publisherLabel?.value || null;
+            steamId   = b?.steamId?.value || null;
+          }
+        } catch { /* skip */ }
 
-        const publisher = (appData.publishers || [])[0] || null;
-        const coverUrl  = appData.header_image || null;
+        // Step 3: description from Wikipedia
+        let description = "";
+        try {
+          const wikiRes = await fetch(
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, "_"))}`,
+            { headers: { Accept: "application/json" } }
+          );
+          if (wikiRes.ok) {
+            const wikiData = await wikiRes.json();
+            description = wikiData.extract || "";
+          }
+        } catch { /* skip */ }
 
-        const movies = appData.movies || [];
-        const trailer = movies.find(m => m.highlight) || movies[0];
-        const trailerVideoUrl = trailer?.mp4?.max || trailer?.mp4?.["480"]
-                             || trailer?.webm?.max || trailer?.webm?.["480"] || null;
+        // Step 4: cover from Steam CDN if we have a Steam App ID
+        const coverUrl = steamId
+          ? `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/header.jpg`
+          : null;
 
-        return {
-          description:    appData.short_description || "",
-          coverUrl,
-          publisher,
-          trailerVideoUrl,
-          steamUrl: `https://store.steampowered.com/app/${first.id}`
-        };
+        const wikiUrl = steamId
+          ? `https://store.steampowered.com/app/${steamId}`
+          : `https://www.wikidata.org/wiki/${qid}`;
+
+        return { description, coverUrl, publisher, wikiUrl };
       } catch { return null; }
     }
 
-    async function fetchAndStoreSteamGame(index, title) {
-      const data  = await fetchSteamGameData(title);
+    async function fetchAndStoreWikidataGame(index, title) {
+      const data  = await fetchWikidataGameData(title);
       const patch = data
         ? { description: data.description, thumbnailUrl: data.coverUrl || null,
-            wikiUrl: data.steamUrl || null, publisher: data.publisher || null,
-            trailerVideoUrl: data.trailerVideoUrl || null }
+            wikiUrl: data.wikiUrl || null, publisher: data.publisher || null }
         : { description: "" };
       updateEntry(index, patch);
     }
@@ -1922,7 +1959,7 @@
       } else {
         if (entry.mediaType === "Game") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreSteamGame(index, title);
+          fetchAndStoreWikidataGame(index, title);
         } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
           fetchAndStoreTMDB(index, title, entry.mediaType);
@@ -2473,13 +2510,13 @@ Example format:
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
         else if (type === "Game") {
-          const steamResult = await searchSteam(q);
-          if (steamResult === null) {
+          const wdResult = await searchWikidata(q);
+          if (wdResult === null) {
             _wikiSearchResults = [];
-            dropdown.innerHTML = `<div class="search-no-results">Steam search not reachable — check your connection</div>`;
+            dropdown.innerHTML = `<div class="search-no-results">Game search unavailable — check your connection</div>`;
             return;
           }
-          apiRaw = steamResult;
+          apiRaw = wdResult;
         }
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
@@ -2818,16 +2855,14 @@ Example format:
       // Fetch metadata from each type's native source
       const typeTag = knownType ? typeTagHTML(knownType) : "";
       if (resolvedType === "Game") {
-        const gd = await fetchSteamGameData(title);
+        const gd = await fetchWikidataGameData(title);
         if (gd) {
           if (gd.description) { descEl.textContent = gd.description; descEl.className = "detail-hero-description"; }
           else { descEl.style.display = "none"; }
           if (gd.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${gd.coverUrl}" alt="">`;
-          const steamLink = gd.steamUrl || `https://store.steampowered.com/search/?term=${encodeURIComponent(title)}`;
           const pubHtml = gd.publisher ? `<span class="detail-publisher">by ${esc(gd.publisher)}</span>` : "";
           document.getElementById("detail-meta").innerHTML =
-            typeTag + pubHtml + `<a href="${steamLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Steam ↗</a>`;
-          if (gd.trailerVideoUrl) renderVideoTrailer(gd.trailerVideoUrl);
+            typeTag + pubHtml + (gd.wikiUrl ? `<a href="${gd.wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Steam ↗</a>` : "");
         } else { descEl.style.display = "none"; }
       } else if (resolvedType === "Film" || resolvedType === "Television Series") {
         const tmdb = await fetchTMDBData(title, resolvedType);
@@ -2939,12 +2974,12 @@ Example format:
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
         else if (type === "Game") {
-          const steamResult = await searchSteam(q);
-          if (steamResult === null) {
-            drop.innerHTML = `<div class="search-no-results">Steam search not reachable — check your connection</div>`;
+          const wdResult = await searchWikidata(q);
+          if (wdResult === null) {
+            drop.innerHTML = `<div class="search-no-results">Game search unavailable — check your connection</div>`;
             return;
           }
-          raw = steamResult;
+          raw = wdResult;
         }
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
