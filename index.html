@@ -1249,7 +1249,15 @@
 
     <div class="settings-card">
       <div class="settings-card-title">Games</div>
-      <p class="key-note" style="margin:0;">Powered by <a href="https://www.wikidata.org" target="_blank" rel="noopener noreferrer">Wikidata</a> + <a href="https://en.wikipedia.org" target="_blank" rel="noopener noreferrer">Wikipedia</a> — no API key required. Search, cover art (via Steam CDN), descriptions, and publisher pulled automatically.</p>
+      <p class="key-note" style="margin:0 0 14px;">Powered by Wikidata + Wikipedia — no API key required for search, cover art, descriptions, and publisher.</p>
+      <div class="settings-field">
+        <label for="settings-youtube-key">YouTube API key <span style="font-weight:400;color:var(--text3)">(optional — for game trailers)</span></label>
+        <div class="key-row">
+          <input type="password" id="settings-youtube-key" placeholder="AIza…"
+            oninput="localStorage.setItem('jdlogs_youtube_key', this.value.trim())" />
+        </div>
+        <p class="key-note">Get a free key at <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank">Google Cloud Console</a> → enable YouTube Data API v3</p>
+      </div>
     </div>
   </div>
 
@@ -1294,10 +1302,27 @@
 
     const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
     const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
+    const YOUTUBE_KEY_KEY   = "jdlogs_youtube_key";
     function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
     function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
+    function getYoutubeKey()   { return localStorage.getItem(YOUTUBE_KEY_KEY)   || ""; }
 
     // ── Steam Store game data (no API key required) ──
+    // ── YouTube trailer search (games only) ──
+    async function fetchGameTrailerKey(title) {
+      const key = getYoutubeKey();
+      if (!key) return null;
+      try {
+        const q = encodeURIComponent(`${title} official game trailer`);
+        const res = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${encodeURIComponent(key)}`
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.items?.[0]?.id?.videoId || null;
+      } catch { return null; }
+    }
+
     // ── Wikidata + Wikipedia game data (no API key, full browser CORS) ──
     async function searchWikidata(q) {
       try {
@@ -1376,7 +1401,10 @@
           ? `https://store.steampowered.com/app/${steamId}`
           : `https://www.wikidata.org/wiki/${qid}`;
 
-        return { description, coverUrl, publisher, wikiUrl };
+        // Step 5: YouTube trailer (only if key is set)
+        const trailerKey = await fetchGameTrailerKey(title);
+
+        return { description, coverUrl, publisher, wikiUrl, trailerKey };
       } catch { return null; }
     }
 
@@ -1384,7 +1412,8 @@
       const data  = await fetchWikidataGameData(title);
       const patch = data
         ? { description: data.description, thumbnailUrl: data.coverUrl || null,
-            wikiUrl: data.wikiUrl || null, publisher: data.publisher || null }
+            wikiUrl: data.wikiUrl || null, publisher: data.publisher || null,
+            trailerKey: data.trailerKey || null }
         : { description: "" };
       updateEntry(index, patch);
     }
@@ -2863,6 +2892,7 @@ Example format:
           const pubHtml = gd.publisher ? `<span class="detail-publisher">by ${esc(gd.publisher)}</span>` : "";
           document.getElementById("detail-meta").innerHTML =
             typeTag + pubHtml + (gd.wikiUrl ? `<a href="${gd.wikiUrl}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Steam ↗</a>` : "");
+          if (gd.trailerKey) renderTrailer(gd.trailerKey);
         } else { descEl.style.display = "none"; }
       } else if (resolvedType === "Film" || resolvedType === "Television Series") {
         const tmdb = await fetchTMDBData(title, resolvedType);
@@ -3599,6 +3629,7 @@ Example format:
     function openSettings() {
       document.getElementById("settings-anthropic-key").value = getAnthropicKey();
       document.getElementById("settings-tmdb-key").value      = getTmdbKey();
+      document.getElementById("settings-youtube-key").value   = getYoutubeKey();
     }
 
     renderLog();
