@@ -1249,14 +1249,7 @@
 
     <div class="settings-card">
       <div class="settings-card-title">Games</div>
-      <div class="settings-field">
-        <label for="settings-rawg-key">RAWG API key</label>
-        <div class="key-row">
-          <input type="password" id="settings-rawg-key" placeholder="your-rawg-key…"
-            oninput="localStorage.setItem('jdlogs_rawg_key', this.value.trim())" />
-        </div>
-        <p class="key-note">Get a free key at <a href="https://rawg.io/apidocs" target="_blank">rawg.io/apidocs</a> — free tier, no credit card</p>
-      </div>
+      <p class="key-note" style="margin:0;">Powered by the <a href="https://store.steampowered.com" target="_blank" rel="noopener noreferrer">Steam Store</a> — no API key required. Search, cover art, descriptions, publisher, and trailers pulled automatically.</p>
     </div>
   </div>
 
@@ -1301,69 +1294,59 @@
 
     const TMDB_KEY_KEY      = "jdlogs_tmdb_key";
     const ANTHROPIC_KEY_KEY = "jdlogs_anthropic_key";
-    const RAWG_KEY_KEY      = "jdlogs_rawg_key";
     function getTmdbKey()      { return localStorage.getItem(TMDB_KEY_KEY)      || ""; }
     function getAnthropicKey() { return localStorage.getItem(ANTHROPIC_KEY_KEY) || ""; }
-    function getRawgKey()      { return localStorage.getItem(RAWG_KEY_KEY)      || ""; }
 
-    // ── RAWG.io game data (free API key at rawg.io/apidocs) ──
-    async function searchRAWG(q) {
-      const key = getRawgKey();
-      if (!key) return [{ title: "Add your RAWG API key in Settings to search games", subtitle: "", action: "settings" }];
+    // ── Steam Store game data (no API key required) ──
+    async function searchSteam(q) {
       try {
-        const res = await fetch(`https://api.rawg.io/api/games?key=${encodeURIComponent(key)}&search=${encodeURIComponent(q)}&page_size=7`);
+        const res = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(q)}&l=english&cc=US`);
         if (!res.ok) return null;
         const data = await res.json();
-        return (data.results || []).map(g => ({
+        return (data.items || []).slice(0, 7).map(g => ({
           title:    g.name || "",
-          subtitle: g.released ? g.released.slice(0, 4) : ""
+          subtitle: ""
         }));
       } catch { return null; }
     }
 
-    async function fetchRAWGGameData(title) {
-      const key = getRawgKey();
-      if (!key) return null;
+    async function fetchSteamGameData(title) {
       try {
-        const searchRes = await fetch(`https://api.rawg.io/api/games?key=${encodeURIComponent(key)}&search=${encodeURIComponent(title)}&page_size=1`);
+        const searchRes = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(title)}&l=english&cc=US`);
         if (!searchRes.ok) return null;
         const searchData = await searchRes.json();
-        const first = searchData?.results?.[0];
+        const first = searchData?.items?.[0];
         if (!first?.id) return null;
 
-        const detailRes = await fetch(`https://api.rawg.io/api/games/${first.id}?key=${encodeURIComponent(key)}`);
+        const detailRes = await fetch(`https://store.steampowered.com/api/appdetails?appids=${first.id}&l=english`);
         if (!detailRes.ok) return null;
-        const g = await detailRes.json();
+        const detailData = await detailRes.json();
+        const appData = detailData?.[String(first.id)]?.data;
+        if (!appData) return null;
 
-        const publisher = (g.publishers || [])[0]?.name || null;
-        const coverUrl  = g.background_image || null;
+        const publisher = (appData.publishers || [])[0] || null;
+        const coverUrl  = appData.header_image || null;
 
-        // Try to get trailer (direct video URL from RAWG)
-        let trailerVideoUrl = null;
-        try {
-          const movRes = await fetch(`https://api.rawg.io/api/games/${first.id}/movies?key=${encodeURIComponent(key)}`);
-          if (movRes.ok) {
-            const movData = await movRes.json();
-            const clip = movData?.results?.[0];
-            if (clip) trailerVideoUrl = clip.data?.max || clip.data?.["480"] || null;
-          }
-        } catch { /* no trailer */ }
+        const movies = appData.movies || [];
+        const trailer = movies.find(m => m.highlight) || movies[0];
+        const trailerVideoUrl = trailer?.mp4?.max || trailer?.mp4?.["480"]
+                             || trailer?.webm?.max || trailer?.webm?.["480"] || null;
 
         return {
-          description: g.description_raw || "",
+          description:    appData.short_description || "",
           coverUrl,
           publisher,
           trailerVideoUrl,
-          rawgUrl: `https://rawg.io/games/${g.slug || first.id}`
+          steamUrl: `https://store.steampowered.com/app/${first.id}`
         };
       } catch { return null; }
     }
 
-    async function fetchAndStoreRAWGGame(index, title) {
-      const data  = await fetchRAWGGameData(title);
+    async function fetchAndStoreSteamGame(index, title) {
+      const data  = await fetchSteamGameData(title);
       const patch = data
         ? { description: data.description, thumbnailUrl: data.coverUrl || null,
-            wikiUrl: data.rawgUrl || null, publisher: data.publisher || null,
+            wikiUrl: data.steamUrl || null, publisher: data.publisher || null,
             trailerVideoUrl: data.trailerVideoUrl || null }
         : { description: "" };
       updateEntry(index, patch);
@@ -1939,7 +1922,7 @@
       } else {
         if (entry.mediaType === "Game") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
-          fetchAndStoreRAWGGame(index, title);
+          fetchAndStoreSteamGame(index, title);
         } else if (entry.mediaType === "Film" || entry.mediaType === "Television Series") {
           descEl.textContent = "Fetching description…"; descEl.className = "detail-hero-description dim"; descEl.style.display = "";
           fetchAndStoreTMDB(index, title, entry.mediaType);
@@ -2490,13 +2473,13 @@ Example format:
         else if (type === "Television Series") apiRaw = await searchTMDB(q, "tv");
         else if (type === "Book")              apiRaw = await searchOpenLibrary(q);
         else if (type === "Game") {
-          const rawgResult = await searchRAWG(q);
-          if (rawgResult === null) {
+          const steamResult = await searchSteam(q);
+          if (steamResult === null) {
             _wikiSearchResults = [];
-            dropdown.innerHTML = `<div class="search-no-results">RAWG search failed — check your API key in Settings</div>`;
+            dropdown.innerHTML = `<div class="search-no-results">Steam search not reachable — check your connection</div>`;
             return;
           }
-          apiRaw = rawgResult;
+          apiRaw = steamResult;
         }
         else if (type === "Album")             apiRaw = await searchMusicBrainz(q, "release-group", searchArtist);
         else if (type === "Song")              apiRaw = await searchMusicBrainz(q, "recording", searchArtist);
@@ -2835,15 +2818,15 @@ Example format:
       // Fetch metadata from each type's native source
       const typeTag = knownType ? typeTagHTML(knownType) : "";
       if (resolvedType === "Game") {
-        const gd = await fetchRAWGGameData(title);
+        const gd = await fetchSteamGameData(title);
         if (gd) {
           if (gd.description) { descEl.textContent = gd.description; descEl.className = "detail-hero-description"; }
           else { descEl.style.display = "none"; }
           if (gd.coverUrl) document.getElementById("detail-poster").innerHTML = `<img src="${gd.coverUrl}" alt="">`;
-          const rawgLink = gd.rawgUrl || `https://rawg.io/search?query=${encodeURIComponent(title)}`;
+          const steamLink = gd.steamUrl || `https://store.steampowered.com/search/?term=${encodeURIComponent(title)}`;
           const pubHtml = gd.publisher ? `<span class="detail-publisher">by ${esc(gd.publisher)}</span>` : "";
           document.getElementById("detail-meta").innerHTML =
-            typeTag + pubHtml + `<a href="${rawgLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">RAWG ↗</a>`;
+            typeTag + pubHtml + `<a href="${steamLink}" target="_blank" rel="noopener noreferrer" class="detail-wiki-link">Steam ↗</a>`;
           if (gd.trailerVideoUrl) renderVideoTrailer(gd.trailerVideoUrl);
         } else { descEl.style.display = "none"; }
       } else if (resolvedType === "Film" || resolvedType === "Television Series") {
@@ -2956,12 +2939,12 @@ Example format:
         else if (type === "Television Series") raw = await searchTMDB(q, "tv");
         else if (type === "Book")              raw = await searchOpenLibrary(q);
         else if (type === "Game") {
-          const rawgResult = await searchRAWG(q);
-          if (rawgResult === null) {
-            drop.innerHTML = `<div class="search-no-results">RAWG search failed — check your API key in Settings</div>`;
+          const steamResult = await searchSteam(q);
+          if (steamResult === null) {
+            drop.innerHTML = `<div class="search-no-results">Steam search not reachable — check your connection</div>`;
             return;
           }
-          raw = rawgResult;
+          raw = steamResult;
         }
         else if (type === "Album")             raw = await searchMusicBrainz(q, "release-group", artist);
         else if (type === "Song")              raw = await searchMusicBrainz(q, "recording", artist);
@@ -3581,7 +3564,6 @@ Example format:
     function openSettings() {
       document.getElementById("settings-anthropic-key").value = getAnthropicKey();
       document.getElementById("settings-tmdb-key").value      = getTmdbKey();
-      document.getElementById("settings-rawg-key").value      = getRawgKey();
     }
 
     renderLog();
