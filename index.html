@@ -1323,10 +1323,16 @@
       } catch { return null; }
     }
 
-    // ── Steam Store game data (no API key required) ──
+    // ── Steam Store game data (via corsproxy.io to bypass browser CORS) ──
+    const STEAM_PROXY = "https://corsproxy.io/?url=";
+
+    function steamFetch(url) {
+      return fetch(STEAM_PROXY + encodeURIComponent(url));
+    }
+
     async function searchSteam(q) {
       try {
-        const res = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(q)}&l=english&cc=US`);
+        const res = await steamFetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(q)}&l=english&cc=US`);
         if (!res.ok) return null;
         const data = await res.json();
         return (data.items || []).slice(0, 7).map(g => ({
@@ -1338,23 +1344,23 @@
 
     async function fetchSteamGameData(title) {
       try {
-        const searchRes = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(title)}&l=english&cc=US`);
+        const searchRes = await steamFetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(title)}&l=english&cc=US`);
         if (!searchRes.ok) return null;
         const searchData = await searchRes.json();
         const first = searchData?.items?.[0];
         if (!first?.id) return null;
 
-        const detailRes = await fetch(`https://store.steampowered.com/api/appdetails?appids=${first.id}&l=english`);
+        const detailRes = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${first.id}&l=english`);
         if (!detailRes.ok) return null;
         const detailData = await detailRes.json();
         const appData = detailData?.[String(first.id)]?.data;
         if (!appData) return null;
 
-        const publisher      = (appData.publishers || [])[0] || null;
-        const coverUrl       = appData.header_image || null;
-        const description    = appData.short_description || "";
-        const steamUrl       = `https://store.steampowered.com/app/${first.id}`;
-        const trailerKey     = await fetchGameTrailerKey(title);
+        const publisher   = (appData.publishers || [])[0] || null;
+        const coverUrl    = appData.header_image || null;
+        const description = appData.short_description || "";
+        const steamUrl    = `https://store.steampowered.com/app/${first.id}`;
+        const trailerKey  = await fetchGameTrailerKey(title);
 
         return { description, coverUrl, publisher, steamUrl, trailerKey };
       } catch { return null; }
