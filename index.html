@@ -785,6 +785,11 @@
     .home-empty {
       font-size: 13px; color: var(--text4); text-align: center; padding: 32px 0;
     }
+    #home-dashboard:not(:empty) { margin-bottom: 32px; }
+    #home-dashboard + #home-log-form {
+      border-top: 1px solid var(--border);
+      padding-top: 28px;
+    }
 
     /* ── Artist sub-input (Song / Album) ── */
     .artist-input-row {
@@ -1002,7 +1007,7 @@
   <div id="view-home">
     <div id="home-dashboard"></div>
 
-    <div id="home-log-form" style="display:none;">
+    <div id="home-log-form">
     <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
 
     <label for="entry-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
