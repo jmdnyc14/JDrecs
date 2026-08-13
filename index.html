@@ -731,6 +731,61 @@
       position: relative;
     }
 
+    /* ── Home dashboard ── */
+    .home-stats-row {
+      display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .home-stat-card {
+      flex: 1; min-width: 90px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .home-stat-value {
+      font-size: 28px; font-weight: 700; color: var(--text);
+      font-variant-numeric: tabular-nums; line-height: 1.1;
+    }
+    .home-stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+    .home-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 600px) { .home-panels { grid-template-columns: 1fr; } }
+    .home-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px;
+    }
+    .home-panel-title {
+      font-size: 11px; font-weight: 600; color: var(--text3);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px;
+    }
+    .home-chart { display: flex; align-items: flex-end; gap: 6px; height: 64px; }
+    .home-chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+    .home-chart-bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: var(--accent); min-height: 3px;
+      transition: height .3s;
+    }
+    .home-chart-label { font-size: 10px; color: var(--text4); }
+    .home-recent-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 8px;
+    }
+    .home-recent-cell {
+      aspect-ratio: 2/3; border-radius: 6px; overflow: hidden;
+      background: var(--border); cursor: pointer; position: relative;
+      transition: transform .15s, opacity .15s;
+    }
+    .home-recent-cell:hover { transform: scale(1.04); opacity: .9; }
+    .home-recent-cell img { width: 100%; height: 100%; object-fit: cover; }
+    .home-recent-no-art {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: var(--text4); text-align: center; padding: 4px;
+    }
+    .home-section-title {
+      font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 12px;
+    }
+    .home-empty {
+      font-size: 13px; color: var(--text4); text-align: center; padding: 32px 0;
+    }
+
     /* ── Artist sub-input (Song / Album) ── */
     .artist-input-row {
       display: none;
@@ -945,6 +1000,9 @@
 
   <!-- ── Home view ── -->
   <div id="view-home">
+    <div id="home-dashboard"></div>
+
+    <div id="home-log-form" style="display:none;">
     <p class="subtitle">Tell the agent what you've enjoyed — it'll find your next favourite.</p>
 
     <label for="entry-title">What are you logging? <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
@@ -1026,6 +1084,7 @@
     <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
     <p id="status"></p>
     <div id="results"></div>
+    </div><!-- end #home-log-form -->
   </div>
 
   <!-- ── Log view ── -->
@@ -1415,6 +1474,7 @@
       document.getElementById("nav-stats-btn").classList.toggle("active", v === "stats");
       document.getElementById("nav-backlog-btn").classList.toggle("active", v === "backlog");
       document.getElementById("nav-lists-btn").classList.toggle("active", v === "lists");
+      if (v === "home")     renderHome();
       if (v === "stats")    renderStats();
       if (v === "backlog")  renderBacklog();
       if (v === "lists")    renderListsIndex();
@@ -1624,6 +1684,98 @@
     function toggleSuggestions(dateKey) {
       hiddenSuggestions.has(dateKey) ? hiddenSuggestions.delete(dateKey) : hiddenSuggestions.add(dateKey);
       renderLog();
+    }
+
+    // ── Render home dashboard ──
+    function renderHome() {
+      const dash = document.getElementById("home-dashboard");
+      if (!dash) return;
+      const entries  = loadLog();
+      const backlog  = loadBacklog();
+      const lists    = loadLists();
+
+      if (entries.length === 0) {
+        dash.innerHTML = `<div class="home-empty">No entries yet — log something to see your shelf.</div>`;
+        return;
+      }
+
+      // Stats
+      const total      = entries.length;
+      const inProgress = entries.filter(e => e.status === "in-progress").length;
+      const completed  = entries.filter(e => e.status === "completed").length;
+      const avgRating  = entries.filter(e => e.rating).length
+        ? (entries.reduce((s, e) => s + (parseInt(e.rating) || 0), 0) / entries.filter(e => e.rating).length).toFixed(1)
+        : "—";
+
+      // Rating distribution (1–10)
+      const ratingCounts = Array(10).fill(0);
+      entries.forEach(e => {
+        const r = parseInt(e.rating);
+        if (r >= 1 && r <= 10) ratingCounts[r - 1]++;
+      });
+      const maxCount = Math.max(...ratingCounts, 1);
+
+      const chartBars = ratingCounts.map((c, i) =>
+        `<div class="home-chart-bar-wrap">
+          <div class="home-chart-bar" style="height:${Math.round((c / maxCount) * 100)}%;opacity:${c === 0 ? 0.18 : 1};"></div>
+          <div class="home-chart-label">${i + 1}</div>
+        </div>`
+      ).join("");
+
+      // Media type breakdown
+      const typeCounts = {};
+      entries.forEach(e => { if (e.mediaType) typeCounts[e.mediaType] = (typeCounts[e.mediaType] || 0) + 1; });
+      const typeRows = Object.entries(typeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, count]) => {
+          const pct = Math.round((count / total) * 100);
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="font-size:12px;color:var(--text2);min-width:130px;">${type}</div>
+            <div style="flex:1;height:6px;border-radius:3px;background:var(--border);overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);min-width:28px;text-align:right;">${count}</div>
+          </div>`;
+        }).join("");
+
+      // Recent cover shelf — last 10 entries with thumbnails first, then without
+      const withArt    = entries.filter(e => e.thumbnailUrl);
+      const withoutArt = entries.filter(e => !e.thumbnailUrl);
+      const shelfEntries = [...withArt, ...withoutArt].slice(0, 12);
+
+      const shelfCells = shelfEntries.map((e, i) => {
+        const idx = entries.indexOf(e);
+        if (e.thumbnailUrl) {
+          return `<div class="home-recent-cell" onclick="showView('detail',${idx})" title="${e.title}">
+            <img src="${e.thumbnailUrl}" alt="${e.title}" loading="lazy" />
+          </div>`;
+        }
+        return `<div class="home-recent-cell" onclick="showView('detail',${idx})" title="${e.title}">
+          <div class="home-recent-no-art">${e.title}</div>
+        </div>`;
+      }).join("");
+
+      dash.innerHTML = `
+        <div class="home-stats-row">
+          <div class="home-stat-card"><div class="home-stat-value">${total}</div><div class="home-stat-label">Logged</div></div>
+          <div class="home-stat-card"><div class="home-stat-value">${completed}</div><div class="home-stat-label">Completed</div></div>
+          <div class="home-stat-card"><div class="home-stat-value">${inProgress}</div><div class="home-stat-label">In Progress</div></div>
+          <div class="home-stat-card"><div class="home-stat-value">${backlog.length}</div><div class="home-stat-label">Backlog</div></div>
+          <div class="home-stat-card"><div class="home-stat-value">${avgRating}</div><div class="home-stat-label">Avg Rating</div></div>
+        </div>
+        <div class="home-panels">
+          <div class="home-panel">
+            <div class="home-panel-title">Rating Distribution</div>
+            <div class="home-chart">${chartBars}</div>
+          </div>
+          <div class="home-panel">
+            <div class="home-panel-title">By Media Type</div>
+            ${typeRows || '<div style="font-size:12px;color:var(--text4);">No data</div>'}
+          </div>
+        </div>
+        <div class="home-section-title">Your Shelf</div>
+        <div class="home-recent-grid">${shelfCells}</div>
+      `;
     }
 
     // ── Render log list ──
@@ -3591,6 +3743,7 @@ Example format:
     }
 
     renderLog();
+    renderHome();
   </script>
 
 </body>
