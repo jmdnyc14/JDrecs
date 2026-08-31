@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>jdlogs</title>
+  <title>loggdit</title>
   <style>
     /* ── Theme variables ── */
     :root {
@@ -75,6 +75,7 @@
     }
     .nav-logo .logo-accent { color: #F58426; }
     .nav-logo:hover { opacity: 0.85; }
+    .nav-logo.active { opacity: 1; text-shadow: 0 0 16px rgba(245,132,38,0.45); }
 
     .nav-log-btn {
       display: flex;
@@ -954,7 +955,7 @@
 
   <!-- ── Persistent nav ── -->
   <nav id="main-nav">
-    <span class="nav-logo" onclick="showView('home')"><span class="logo-accent">jd</span>logs</span>
+    <span class="nav-logo" id="nav-home-btn" onclick="showView('home')">logg<span class="logo-accent">dit</span></span>
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <button class="settings-btn" onclick="showView('settings')" title="Settings">⚙</button>
       <button class="nav-log-btn" id="nav-stats-btn" onclick="showView('stats')">Stats</button>
@@ -1086,7 +1087,7 @@
     <label for="review" style="margin-top:12px;">Review <span style="font-weight:400;color:var(--text4);">(optional)</span></label>
     <textarea id="review" rows="3" placeholder="Write a short review of what you logged…"></textarea>
 
-    <button id="go-btn" onclick="getRecommendations()">Get recommendations</button>
+    <button id="go-btn" onclick="getRecommendations()">Get recommendations <span style="font-size:11px;opacity:0.55;font-weight:400;">⌘↵</span></button>
     <p id="status"></p>
     <div id="results"></div>
     </div><!-- end #home-log-form -->
@@ -1347,6 +1348,7 @@
     let currentDetailTitle     = null;
     let currentDetailMediaType = null;
     let currentBackView        = "home";
+    let currentView            = "home";
     let searchTimer            = null;
     let _wikiSearchResults     = [];
 
@@ -1471,10 +1473,13 @@
 
     // ── View routing ──
     function showView(v, idx) {
+      if (v === "detail" && currentView !== "detail") currentBackView = currentView;
+      currentView = v;
       ["home", "log", "detail", "stats", "backlog", "lists", "settings"].forEach(name => {
         document.getElementById(`view-${name}`).style.display = name === v ? "" : "none";
       });
       document.getElementById("search-wrap").style.display = v === "settings" ? "none" : "";
+      document.getElementById("nav-home-btn").classList.toggle("active", v === "home");
       document.getElementById("nav-log-btn").classList.toggle("active", v === "log" || v === "detail");
       document.getElementById("nav-stats-btn").classList.toggle("active", v === "stats");
       document.getElementById("nav-backlog-btn").classList.toggle("active", v === "backlog");
@@ -1487,7 +1492,6 @@
       if (v === "detail" && idx !== undefined) {
         currentDetailIndex = idx;
         currentDetailTitle = null;
-        currentBackView    = "log";
         loadDetailView(idx);
       }
     }
@@ -1692,12 +1696,18 @@
     }
 
     // ── Render home dashboard ──
+    function titleColorHash(str) {
+      let h = 0;
+      for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+      const hue = h % 360;
+      return `hsl(${hue},42%,32%)`;
+    }
+
     function renderHome() {
       const dash = document.getElementById("home-dashboard");
       if (!dash) return;
-      const entries  = loadLog();
-      const backlog  = loadBacklog();
-      const lists    = loadLists();
+      const entries = loadLog();
+      const backlog = loadBacklog();
 
       if (entries.length === 0) {
         dash.innerHTML = `<div class="home-empty">No entries yet — log something to see your shelf.</div>`;
@@ -1708,18 +1718,15 @@
       const total      = entries.length;
       const inProgress = entries.filter(e => e.status === "in-progress").length;
       const completed  = entries.filter(e => e.status === "completed").length;
-      const avgRating  = entries.filter(e => e.rating).length
-        ? (entries.reduce((s, e) => s + (parseInt(e.rating) || 0), 0) / entries.filter(e => e.rating).length).toFixed(1)
+      const rated      = entries.filter(e => e.rating);
+      const avgRating  = rated.length
+        ? (rated.reduce((s, e) => s + (parseInt(e.rating) || 0), 0) / rated.length).toFixed(1)
         : "—";
 
       // Rating distribution (1–10)
       const ratingCounts = Array(10).fill(0);
-      entries.forEach(e => {
-        const r = parseInt(e.rating);
-        if (r >= 1 && r <= 10) ratingCounts[r - 1]++;
-      });
+      entries.forEach(e => { const r = parseInt(e.rating); if (r >= 1 && r <= 10) ratingCounts[r - 1]++; });
       const maxCount = Math.max(...ratingCounts, 1);
-
       const chartBars = ratingCounts.map((c, i) =>
         `<div class="home-chart-bar-wrap">
           <div class="home-chart-bar" style="height:${Math.round((c / maxCount) * 100)}%;opacity:${c === 0 ? 0.18 : 1};"></div>
@@ -1734,39 +1741,42 @@
         .sort((a, b) => b[1] - a[1])
         .map(([type, count]) => {
           const pct = Math.round((count / total) * 100);
-          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          const cfg = TYPE_COLORS[type] || { bg: "#888" };
+          const barColor = cfg.bg === "#ffffff" ? "#9aa0a8" : cfg.bg;
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;"
+              onclick="showView('log');currentFilterType='${type}';document.getElementById('filter-type').value='${type}';renderLog()">
             <div style="font-size:12px;color:var(--text2);min-width:130px;">${type}</div>
             <div style="flex:1;height:6px;border-radius:3px;background:var(--border);overflow:hidden;">
-              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;"></div>
+              <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
             </div>
             <div style="font-size:11px;color:var(--text3);min-width:28px;text-align:right;">${count}</div>
           </div>`;
         }).join("");
 
-      // Recent cover shelf — last 10 entries with thumbnails first, then without
-      const withArt    = entries.filter(e => e.thumbnailUrl);
-      const withoutArt = entries.filter(e => !e.thumbnailUrl);
-      const shelfEntries = [...withArt, ...withoutArt].slice(0, 12);
-
+      // Shelf sorted by date logged (most recent first), up to 12
+      const shelfEntries = [...entries].slice(0, 12);
       const shelfCells = shelfEntries.map((e, i) => {
-        const idx = entries.indexOf(e);
-        if (e.thumbnailUrl) {
-          return `<div class="home-recent-cell" onclick="showView('detail',${idx})" title="${e.title}">
-            <img src="${e.thumbnailUrl}" alt="${e.title}" loading="lazy" />
-          </div>`;
-        }
-        return `<div class="home-recent-cell" onclick="showView('detail',${idx})" title="${e.title}">
-          <div class="home-recent-no-art">${e.title}</div>
-        </div>`;
+        const title = getEntryTitle(e);
+        const inner = e.thumbnailUrl
+          ? `<img src="${e.thumbnailUrl}" alt="${title}" loading="lazy" />`
+          : `<div class="home-recent-no-art" style="background:${titleColorHash(title)};width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:rgba(255,255,255,0.7);">${title.charAt(0).toUpperCase()}</div>`;
+        return `<div class="home-recent-cell" onclick="showView('detail',${i})" title="${title}">${inner}</div>`;
       }).join("");
+
+      // Clickable stat cards
+      const statCard = (value, label, onclick) =>
+        `<div class="home-stat-card" style="cursor:${onclick ? 'pointer' : 'default'};" ${onclick ? `onclick="${onclick}"` : ""}>
+          <div class="home-stat-value">${value}</div>
+          <div class="home-stat-label">${label}</div>
+        </div>`;
 
       dash.innerHTML = `
         <div class="home-stats-row">
-          <div class="home-stat-card"><div class="home-stat-value">${total}</div><div class="home-stat-label">Logged</div></div>
-          <div class="home-stat-card"><div class="home-stat-value">${completed}</div><div class="home-stat-label">Completed</div></div>
-          <div class="home-stat-card"><div class="home-stat-value">${inProgress}</div><div class="home-stat-label">In Progress</div></div>
-          <div class="home-stat-card"><div class="home-stat-value">${backlog.length}</div><div class="home-stat-label">Backlog</div></div>
-          <div class="home-stat-card"><div class="home-stat-value">${avgRating}</div><div class="home-stat-label">Avg Rating</div></div>
+          ${statCard(total,      "Logged",      "showView('log');currentFilterStatus='';document.getElementById('filter-status').value='';renderLog()")}
+          ${statCard(completed,  "Completed",   "showView('log');currentFilterStatus='completed';document.getElementById('filter-status').value='completed';renderLog()")}
+          ${statCard(inProgress, "In Progress", "showView('log');currentFilterStatus='in-progress';document.getElementById('filter-status').value='in-progress';renderLog()")}
+          ${statCard(backlog.length, "Backlog", "showView('backlog')")}
+          ${statCard(avgRating,  "Avg Rating",  "")}
         </div>
         <div class="home-panels">
           <div class="home-panel">
@@ -2920,7 +2930,6 @@ Example format:
         return;
       }
       if (item.logIdx !== -1) {
-        currentBackView = "home";
         showView("detail", item.logIdx);
       } else {
         showDetailForTitle(item.title, item.mediaType);
@@ -2944,6 +2953,14 @@ Example format:
         this.value = "";
         document.getElementById("search-dropdown").style.display = "none";
         this.blur();
+      }
+    });
+
+    // Cmd/Ctrl+Enter fires the recommendations form from anywhere on the home view
+    document.addEventListener("keydown", function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && currentView === "home") {
+        e.preventDefault();
+        getRecommendations();
       }
     });
 
